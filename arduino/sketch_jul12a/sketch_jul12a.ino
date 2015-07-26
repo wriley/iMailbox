@@ -5,7 +5,19 @@
 #include <ESP8266WiFi.h>
 #include <Adafruit_NeoPixel.h>
 
-#define PIN 2
+#define DEBUG 1
+
+#define PRINTDEBUG(STR) \
+  {	\
+    if (DEBUG) Serial.println(STR); \
+  }
+
+#define LEDPIN 0
+#define NEOPIN 2
+#define BATTCHARGEPIN 4
+#define BATTDONEPIN 5
+
+#define SLEEPSECONDS 30
 
 // Parameter 1 = number of pixels in strip
 // Parameter 2 = Arduino pin number (most are valid)
@@ -14,49 +26,103 @@
 //   NEO_KHZ400  400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
 //   NEO_GRB     Pixels are wired for GRB bitstream (most NeoPixel products)
 //   NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
-Adafruit_NeoPixel strip = Adafruit_NeoPixel(12, PIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(12, NEOPIN, NEO_GRB + NEO_KHZ800);
 
 // IMPORTANT: To reduce NeoPixel burnout risk, add 1000 uF capacitor across
 // pixel power leads, add 300 - 500 Ohm resistor on first pixel's data input
 // and minimize distance between Arduino and first pixel.  Avoid connecting
 // on a live circuit...if you must, connect GND first.
 
-const char* ssid     = "TheGeeks";
-const char* password = "CHANGEME";
+#include "localconfig.h"
+const char* ssid     = MY_SSID;
+const char* password = MY_PWD;
 
-const char* host = "192.168.76.130";
+WiFiServer server(80);
 
-WiFiClient client;
+// Fucntion to connect WiFi
+void connectWifi(const char* ssid, const char* password) {
+  int WiFiCounter = 0;
+  // We start by connecting to a WiFi network
+  PRINTDEBUG("Connecting to ");
+  PRINTDEBUG(ssid);
+  WiFi.disconnect();
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED && WiFiCounter < 30) {
+    delay(1000);
+    WiFiCounter++;
+    PRINTDEBUG(".");
+  }
+
+  PRINTDEBUG("");
+  PRINTDEBUG("WiFi connected");
+  PRINTDEBUG("IP address: ");
+  PRINTDEBUG(WiFi.localIP());
+}
 
 void setup() {
   Serial.begin(9600);
   delay(10);
 
-  pinMode(0, OUTPUT);
+  // onboard LED
+  pinMode(LEDPIN, OUTPUT);
+  
+  // set battery status pins to input and enable pullup resistors
+  pinMode(BATTCHARGEPIN, INPUT);
+  digitalWrite(BATTCHARGEPIN, HIGH);
+  pinMode(BATTDOENPIN, INPUT);
+  digitalWrite(BATTDONEPIN, HIGH);
 
   Serial.println();
   Serial.println();
   Serial.println("iMailbox v0.01");
+  
+  connectWifi(ssid, password); 
+  
+  server.begin();
 
   strip.begin();
   strip.show(); // Initialize all pixels to 'off'
 
   delay(1000);
   
-  colorWipe(strip.Color(0,64,0),0);
+  rainbowCycle(255);
   
-  //Serial.println("Going to sleep in 5 seconds");
+  //PRINTDEBUG("Going to sleep for SLEEPSECONDS seconds");
   //delay(5000);
-  //ESP.deepSleep(60 * 1000000);
+  //ESP.deepSleep(SLEEPSECONDS * 1000000);
 }
 
 int value = 0;
 
 void loop() {
-  digitalWrite(0, 0);
-  delay(500);
-  digitalWrite(0, 1);
-  delay(500);
+	delay(10);
+	WiFiClient clientS = server.available();
+	if(clientS) {
+		PRINTDEBUG("new client");
+		while(!clientS.available()) {}
+		String req = clientS.readStringUntil('\r');
+		PRINTDEBUG(req);
+		clientS.flush();
+		
+		String s = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<!DOCTYPE HTML>\r\n<html>\r\n<body>\r\n";
+		if(req.indexOf("/status") != -1) {
+			s += "analog: ";
+			s += String(analogRead(A0));
+			s += "\r\n<br>\r\nbattery charge: ";
+			s += String(digitalRead(BATTCHARGEPIN));
+			s += "\r\n<br>\r\nbattery done: ";
+			s += String(digitalRead(BATTDONEPIN));
+		} else {
+			s += "iMailbox (use /status)"
+		}
+		
+		s += "\r\n</body>\r\n</html>\r\n";
+		
+		clientS.print(s);
+		delay(10);
+		clientS.stop();
+	}
 }
 
 // Fill the dots one after the other with a color
