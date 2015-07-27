@@ -4,24 +4,40 @@
  */
 
 #include <ESP8266WiFi.h>
+#include <EEPROM.h>
 #include <Adafruit_NeoPixel.h>
+//#include <Base64.h>
 #include "localconfig.h"
 
 #define LEDPIN 0
 #define NEOPIN 2
 #define BATTCHARGEPIN 4
 #define BATTDONEPIN 5
-#define SLEEPSECONDS 30
+#define SLEEPSECONDS 300
+
+// EEPROM addresses
+#define EEPROM_COLOR 0
+#define EEPROM_MODE 4
 
 const char* ssid     = MY_SSID;
 const char* password = MY_PWD;
 
+char server[] = MY_SERVER;
+int serverport = MY_SERVERPORT;
+char serverurl[] = MY_SERVERURL;
+
+WiFiClient client;
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(12, NEOPIN, NEO_GRB + NEO_KHZ800);
-WiFiServer server(80);
+
+uint32_t setColor = strip.Color(0,64,0);
+int lightReading = 0;
+uint8_t batteryStatus = 0;
 
 void setup() {
-  Serial.begin(115200);
   delay(500);
+  
+  Serial.begin(9600);
+  delay(10);
 
   // onboard LED
   pinMode(LEDPIN, OUTPUT);
@@ -33,88 +49,95 @@ void setup() {
 
   Serial.println();
   Serial.println();
-  Serial.println("iMailbox v0.01");
+  Serial.println("iMailbox starting");
 
+  // read stored color
+  EEPROM.begin(8);
+  setColor = EEPROMReadlong(EEPROM_COLOR);
+  Serial.print("Read setColor: ");
+  Serial.println(setColor, DEC);
+  if(setColor == 4294967295) {
+    Serial.println("lastColor not set, writing default to EEPROM");
+    setColor = strip.Color(0,64,0);
+    EEPROMWritelong(EEPROM_COLOR, setColor);
+  }
+
+  // show color
   Serial.println("Enabling LED strip");
   strip.begin();
-  strip.show(); // Initialize all pixels to 'off'
-  delay(10);
+  Serial.println("Setting LED color");
+  colorWipe(setColor, 1);
 
-  Serial.println("Setting initial color");
-  colorWipe(strip.Color(0,64,0), 1);
+  // get light reading
+  Serial.println("Getting light reading");
+  lightReading = analogRead(A0);
+  Serial.print("Read raw value: ");
+  Serial.print(lightReading, DEC);
+  Serial.println();
 
+  // get battery status
+  Serial.println("Getting battery status");
+  uint8_t battChg = !digitalRead(BATTCHARGEPIN);
+  uint8_t battDone = !digitalRead(BATTDONEPIN);
+  batteryStatus = battDone + (battChg * 2);
+  Serial.print("Read raw values CHARGE:");
+  Serial.print(battChg, DEC);
+  Serial.print(" DONE:");
+  Serial.print(battDone, DEC);
+  Serial.println();
+
+  // connect to wifi
   Serial.println("Connecting to WiFi");
-  connectWifi(ssid, password); 
+  connectWifi(ssid, password);
 
-  Serial.println("Starting server");
-  server.begin();
+  delay(1000);
+
+  int retries = 30;
+  // send stats
+  for(int i = 0; i < retries; i++) {
+    Serial.print("Sending status, try ");
+    Serial.print(i + 1, DEC);
+    Serial.print(" of ");
+    Serial.println(retries, DEC);
+    
+    int connectResult = client.connect(server, serverport);
+    if(connectResult) {
+      Serial.println("Connected to server");
+      String s = "GET /";
+      s += serverurl;
+      s += "?lightReading=";
+      s += String(lightReading);
+      s += "&batteryStatus=";
+      s += String(batteryStatus);
+      s += " HTTP/1.1";
+      client.println(s);
+      s = "Host: ";
+      s += server;
+      client.println(s);
+      client.println("Connection: close");
+      client.println();
+      Serial.println("Status sent");
+      break;
+    } else {
+      delay(1000);
+    }
+  }
+
+  //
+  // disconnect from wifi
+  // ******* This is disabled because it causes a reset **************
+//  Serial.println("Disconnecting WiFi");
+//  WiFi.disconnect();
 
   Serial.println("Done with setup()");
   LEDOff();
   
-  //Serial.println("Going to sleep for SLEEPSECONDS seconds");
-  //delay(5000);
-  //ESP.deepSleep(SLEEPSECONDS * 1000000);
+  Serial.println("Going to sleep in 1 second");
+  delay(1000);
+  ESP.deepSleep(SLEEPSECONDS * 1000000);
 }
 
 void loop() {
-  // listen for incoming clients
-  WiFiClient client = server.available();
-  if (client) {
-    LEDOn();
-    Serial.println("new client");
-    // an http request ends with a blank line
-    boolean currentLineIsBlank = true;
-    while (client.connected()) {
-      if (client.available()) {
-        char c = client.read();
-        Serial.write(c);
-        // if you've gotten to the end of the line (received a newline
-        // character) and the line is blank, the http request has ended,
-        // so you can send a reply
-        if (c == '\n' && currentLineIsBlank) {
-          // send a standard http response header
-          client.println("HTTP/1.1 200 OK");
-          client.println("Content-Type: text/html");
-          client.println("Connection: close");  // the connection will be closed after completion of the response
-          client.println("Refresh: 5");
-          client.println();
-          client.println("<!DOCTYPE HTML>");
-          client.println("<html>");
-          client.println("<body>");
-          int sensorReading = analogRead(A0);
-          client.print("Light reading is ");
-          client.print(sensorReading);
-          client.println("<br />");
-          client.print("Battery currently charging: ");
-          client.print(digitalRead(BATTCHARGEPIN) ? "No" : "Yes");
-
-          client.println("<br />");
-          client.print("Battery done charging: ");
-          client.print(digitalRead(BATTDONEPIN) ? "No" : "Yes");
-          client.println("<br />");
-          client.println("</body>");
-          client.println("</html>");
-           break;
-        }
-        if (c == '\n') {
-          // you're starting a new line
-          currentLineIsBlank = true;
-        } 
-        else if (c != '\r') {
-          // you've gotten a character on the current line
-          currentLineIsBlank = false;
-        }
-      }
-    }
-    // give the web browser time to receive the data
-    delay(1);
-    
-    // close the connection:
-    client.stop();
-    Serial.println("client disonnected");
-    LEDOff();
-  }
 }
 
 // Fucntion to connect WiFi
@@ -241,4 +264,32 @@ uint32_t Wheel(byte WheelPos) {
    WheelPos -= 170;
    return strip.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
   }
+}
+
+//This function will write a 4 byte (32bit) long to the eeprom at
+//the specified address to adress + 3.
+void EEPROMWritelong(int address, long value) {
+  //Decomposition from a long to 4 bytes by using bitshift.
+  //One = Most significant -> Four = Least significant byte
+  byte four = (value & 0xFF);
+  byte three = ((value >> 8) & 0xFF);
+  byte two = ((value >> 16) & 0xFF);
+  byte one = ((value >> 24) & 0xFF);
+
+  //Write the 4 bytes into the eeprom memory.
+  EEPROM.write(address, four);
+  EEPROM.write(address + 1, three);
+  EEPROM.write(address + 2, two);
+  EEPROM.write(address + 3, one);
+}
+
+long EEPROMReadlong(long address) {
+  //Read the 4 bytes from the eeprom memory.
+  long four = EEPROM.read(address);
+  long three = EEPROM.read(address + 1);
+  long two = EEPROM.read(address + 2);
+  long one = EEPROM.read(address + 3);
+
+  //Return the recomposed long by using bitshift.
+  return ((four << 0) & 0xFF) + ((three << 8) & 0xFFFF) + ((two << 16) & 0xFFFFFF) + ((one << 24) & 0xFFFFFFFF);
 }
