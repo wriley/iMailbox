@@ -4,9 +4,9 @@
  */
 
 #include <ESP8266WiFi.h>
+#include <Base64.h>
 #include <EEPROM.h>
 #include <Adafruit_NeoPixel.h>
-#include <Base64.h>
 #include "localconfig.h"
 
 #define LEDPIN 0
@@ -14,6 +14,7 @@
 #define BATTCHARGEPIN 4
 #define BATTDONEPIN 5
 #define SLEEPSECONDS 300
+#define RETRIES 30
 
 // EEPROM addresses
 #define EEPROM_COLOR 0
@@ -25,11 +26,11 @@ const char* password = MY_PWD;
 const char server[] = MY_SERVER;
 const int serverport = MY_SERVERPORT;
 
-const char host[] = MY_HOST;
+char host[] = MY_HOST;
 char base64host[200];
-const char key1[] = "lightReading";
+char key1[] = "lightReading";
 char base64key1[200];
-const char key2[] = "batteryStatus";
+char key2[] = "batteryStatus";
 char base64key2[200];
 char value1[10];
 char base64value1[200];
@@ -102,45 +103,67 @@ void setup() {
   connectWifi(ssid, password);
 
   delay(1000);
-
-  int retries = 30;
-  // send stats
-  for(int i = 0; i < retries; i++) {
-    Serial.print("Sending to Zabbix, try ");
+  
+  // send lightReading
+  for(int i = 0; i < RETRIES; i++) {
+    Serial.print("Sending lightReading to Zabbix, try ");
     Serial.print(i + 1, DEC);
     Serial.print(" of ");
-    Serial.println(retries, DEC);
+    Serial.println(RETRIES, DEC);
     
     int connectResult = client.connect(server, serverport);
     if(connectResult) {
       Serial.println("Connected to server");
 	  
       base64_encode(base64host, host, sizeof(host)-1);
-	  base64_encode(base64key1, key1, sizeof(key1)-1);
-	  base64_encode(base64key2, key2, sizeof(key2)-1);
-	  base64_encode(base64value1, lightReading, sizeof(lightReading)-1);
-	  base64_encode(base64value2, batteryStatus, sizeof(batteryStatus)-1);
+	    base64_encode(base64key1, key1, sizeof(key1)-1);
+      itoa(lightReading,value1,sizeof(value1));
+	    base64_encode(base64value1, value1, sizeof(value1)-1);
 	  
-	  String s = "<req>\n <host>";
-	  s += base64host;
-	  s += "</host>\n <key>";
-	  s += base64key1;
-	  s += "</key>\n <data>";
-	  s += base64value1;
-	  s += "</data>\n</req>\n";
-	  client.write(s);
-	  delay(10);
-	  
-	  s = "<req>\n <host>";
-	  s += base64host;
-	  s += "</host>\n <key>";
-	  s += base64key2;
-	  s += "</key>\n <data>";
-	  s += base64value2;
-	  s += "</data>\n</req>\n";
-	  client.write(s);
-	  client.stop();
-      Serial.println("Status sent");
+  	  String s = "<req>\n <host>";
+  	  s += base64host;
+  	  s += "</host>\n <key>";
+  	  s += base64key1;
+  	  s += "</key>\n <data>";
+  	  s += base64value1;
+  	  s += "</data>\n</req>\n";
+  	  client.print(s);
+  	  delay(10);
+      client.stop();
+      Serial.println("lightReading sent");
+      break;
+    } else {
+      delay(1000);
+    }
+  }
+
+    // send batteryStatus
+  for(int i = 0; i < RETRIES; i++) {
+    Serial.print("Sending batteryStatus to Zabbix, try ");
+    Serial.print(i + 1, DEC);
+    Serial.print(" of ");
+    Serial.println(RETRIES, DEC);
+    
+    int connectResult = client.connect(server, serverport);
+    if(connectResult) {
+      Serial.println("Connected to server");
+    
+      base64_encode(base64host, host, sizeof(host)-1);
+      base64_encode(base64key2, key2, sizeof(key2)-1);
+      itoa(batteryStatus,value2,sizeof(value2));
+      base64_encode(base64value2, value2, sizeof(value2)-1);
+    
+      String s = "<req>\n <host>";
+      s += base64host;
+      s += "</host>\n <key>";
+      s += base64key2;
+      s += "</key>\n <data>";
+      s += base64value2;
+      s += "</data>\n</req>\n";
+      client.print(s);
+      delay(10);
+      client.stop();
+      Serial.println("batteryStatus sent");
       break;
     } else {
       delay(1000);
