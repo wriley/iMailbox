@@ -1,3 +1,4 @@
+// from http://playground.arduino.cc/Code/EEPROMWriteAnything
 #include <EEPROM.h>
 #include <Arduino.h>  // for type definitions
 
