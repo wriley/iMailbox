@@ -7,8 +7,10 @@
 #include <Base64.h>
 #include <EEPROM.h>
 #include <Adafruit_NeoPixel.h>
+#include "EEPROMAnything.h"
 #include "localconfig.h"
 
+// comment out to disable serial debug statements
 #define DEBUG
 
 #ifdef DEBUG
@@ -29,8 +31,8 @@
 #define RETRIES 30
 
 // EEPROM addresses
-#define EEPROM_COLOR 0
-#define EEPROM_MODE 4
+#define EEPROM_MODE 0
+#define EEPROM_THRESHOLD 1
 
 const char* ssid     = MY_SSID;
 const char* password = MY_PWD;
@@ -50,8 +52,10 @@ char value[10];
 WiFiClient client;
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(12, NEOPIN, NEO_GRB + NEO_KHZ800);
 
-uint32_t setColor = strip.Color(0,64,0);
+uint8_t ledMode = 0;
+uint8_t ledShow = 0;
 uint16_t lightReading = 0;
+uint16_t lightThreshold = 0;
 uint8_t batteryStatus = 0;
 uint16_t elapsedSeconds = 0;
 uint32_t uptime = 0;
@@ -74,27 +78,36 @@ void setup() {
   DEBUG_PRINTLN();
   DEBUG_PRINTLN("iMailbox starting");
 
-/*
-  // read stored color
-  EEPROM.begin(8);
-  setColor = EEPROMReadlong(EEPROM_COLOR);
-  DEBUG_PRINT("Read setColor: ");
-  DEBUG_PRINTDEC(setColor);
+  // needed on ESP
+  EEPROM.begin(512);
+  
+  // read stored mode
+  EEPROM_readAnything(EEPROM_MODE, ledMode);
+  DEBUG_PRINT("Read ledMode: ");
+  DEBUG_PRINTDEC(ledMode);
   DEBUG_PRINTLN();
-  if(setColor == 4294967295) {
-    DEBUG_PRINTLN("Default color not set, writing default to EEPROM");
-    setColor = strip.Color(0,64,0);
-    EEPROMWritelong(EEPROM_COLOR, setColor);
+  if(ledMode == 255) {
+    DEBUG_PRINTLN("Default mode not set, writing default to EEPROM");
+    ledMode = 0;
+    EEPROM_writeAnything(EEPROM_MODE, ledMode);
   }
 
-  // show color
-*/
+  // read stored threshold
+  EEPROM_readAnything(EEPROM_THRESHOLD, lightThreshold);
+  DEBUG_PRINT("Read lightThreshold: ");
+  DEBUG_PRINTDEC(lightThreshold);
+  DEBUG_PRINTLN();
+  if(lightThreshold == 65535) {
+    DEBUG_PRINTLN("Default threshold not set, writing default to EEPROM");
+    lightThreshold = 600;
+    EEPROM_writeAnything(EEPROM_THRESHOLD, lightThreshold);
+  }
+
+  // enable leds
   DEBUG_PRINTLN("Enabling LED strip");
   strip.begin();
-/*
-  DEBUG_PRINTLN("Setting LED color");
-  colorWipe(setColor, 1);
-*/
+  strip.clear();
+  strip.show();
 
   // connect to wifi
   DEBUG_PRINTLN("Connecting to WiFi");
@@ -104,6 +117,9 @@ void setup() {
 
   DEBUG_PRINTLN("Done with setup()");
   LEDOff();
+
+  DEBUG_PRINTLN("Updating initial status");
+  updateStatus();
 
   DEBUG_PRINTLN("Sending initial status");
   sendStatus();
@@ -119,13 +135,22 @@ void loop() {
 
   for(j=0; j<256; j++) {
     for(i=0; i<strip.numPixels(); i++) {
-      strip.setPixelColor(i, Wheel((i+j) & 255));
+      if(ledShow == 1) {
+        strip.setPixelColor(i, Wheel((i+j) & 255));
+      }
     }
-    strip.show();
+    if(ledShow == 1) {
+      strip.show();
+    }
     for(k=0; k < 10; k++) {
       uptimeTick();
       if(elapsedSeconds++ >= 60) {
+        updateStatus();
         sendStatus();
+        if(ledShow == 0) {
+          strip.clear();
+          strip.show();
+        }
         elapsedSeconds = 0;
       }
       delay(1000);
@@ -137,18 +162,28 @@ void uptimeTick() {
   uptime++;
 }
 
-void sendStatus() {
-  LEDOn();
-  // get light reading
-  DEBUG_PRINT("sendStatus() at uptime of ");
+void updateStatus() {
+  DEBUG_PRINT("updateStatus() at uptime of ");
   DEBUG_PRINTDEC(uptime);
   DEBUG_PRINTLN(" seconds");
+  
+  // get light reading
   DEBUG_PRINTLN("Getting light reading");
   lightReading = analogRead(A0);
   delay(10);
-  DEBUG_PRINT("Read raw value: ");
+  DEBUG_PRINT("lightReading: ");
   DEBUG_PRINTDEC(lightReading);
+  DEBUG_PRINT(" lightThreshold: ");
+  DEBUG_PRINTDEC(lightThreshold);
   DEBUG_PRINTLN();
+  
+  if(lightReading >= lightThreshold) {
+    DEBUG_PRINTLN("lightReading over threshold, turning on LEDs");  
+    ledShow = 1;
+  } else {
+    DEBUG_PRINTLN("lightReading under threshold, turning off LEDs");
+    ledShow = 0;
+  }
 
   // get battery status
   DEBUG_PRINTLN("Getting battery status");
@@ -161,6 +196,16 @@ void sendStatus() {
   DEBUG_PRINTDEC(battDone);
   DEBUG_PRINTLN();
 
+  DEBUG_PRINTLN("updateStatus() done");
+}
+
+void sendStatus() {
+  DEBUG_PRINT("sendStatus() at uptime of ");
+  DEBUG_PRINTDEC(uptime);
+  DEBUG_PRINTLN(" seconds");
+  
+  LEDOn();
+  
   // send lightReading
   for(int i = 0; i < RETRIES; i++) {
     DEBUG_PRINT("Sending lightReading to Zabbix, try ");
@@ -264,6 +309,8 @@ void sendStatus() {
   }
 
   LEDOff();
+
+  DEBUG_PRINTLN("sendStatus() done");
 }
 
 // Fucntion to connect WiFi
@@ -291,12 +338,6 @@ void printWifiStatus() {
   IPAddress ip = WiFi.localIP();
   DEBUG_PRINT("IP Address: ");
   DEBUG_PRINTLN(ip);
-
-  // print the received signal strength:
-  long rssi = WiFi.RSSI();
-  DEBUG_PRINT("signal strength (RSSI):");
-  DEBUG_PRINT(rssi);
-  DEBUG_PRINTLN(" dBm");
 }
 
 void LEDOn() {
