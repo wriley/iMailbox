@@ -58,7 +58,6 @@ uint16_t lightReading = 0;
 uint16_t lightThreshold = 0;
 uint8_t batteryStatus = 0;
 uint16_t elapsedSeconds = 0;
-uint32_t uptime = 0;
 
 void setup() {
   delay(500);
@@ -143,7 +142,6 @@ void loop() {
       strip.show();
     }
     for(k=0; k < 10; k++) {
-      uptimeTick();
       if(elapsedSeconds++ >= 60) {
         updateStatus();
         sendStatus();
@@ -158,13 +156,9 @@ void loop() {
   }
 }
 
-void uptimeTick() {
-  uptime++;
-}
-
 void updateStatus() {
   DEBUG_PRINT("updateStatus() at uptime of ");
-  DEBUG_PRINTDEC(uptime);
+  DEBUG_PRINTDEC(millis()/1000);
   DEBUG_PRINTLN(" seconds");
   
   // get light reading
@@ -201,7 +195,7 @@ void updateStatus() {
 
 void sendStatus() {
   DEBUG_PRINT("sendStatus() at uptime of ");
-  DEBUG_PRINTDEC(uptime);
+  DEBUG_PRINTDEC(millis()/1000);
   DEBUG_PRINTLN(" seconds");
   
   LEDOn();
@@ -288,7 +282,7 @@ void sendStatus() {
     
       base64_encode(base64host, host, sizeof(host)-1);
       base64_encode(base64key, key3, sizeof(key3)-1);
-      itoa(uptime,value,sizeof(value));
+      itoa(millis()/1000,value,sizeof(value));
       base64_encode(base64value, value, sizeof(value)-1);
     
       String s = "<req>\n <host>";
