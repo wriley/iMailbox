@@ -27,6 +27,7 @@
 #define NEOPIN 2
 #define BATTCHARGEPIN 4
 #define BATTDONEPIN 5
+#define BATTPGPIN 12
 #define SLEEPSECONDS 300
 #define RETRIES 30
 
@@ -72,6 +73,7 @@ void setup() {
   // set battery status pins to input and enable pullup resistors
   pinMode(BATTCHARGEPIN, INPUT_PULLUP);
   pinMode(BATTDONEPIN, INPUT_PULLUP);
+  pinMode(BATTPGPIN, INPUT_PULLUP);
 
   DEBUG_PRINTLN();
   DEBUG_PRINTLN();
@@ -102,30 +104,33 @@ void setup() {
     EEPROM_writeAnything(EEPROM_THRESHOLD, lightThreshold);
   }
 
-  // enable leds
-  DEBUG_PRINTLN("Enabling LED strip");
-  strip.begin();
-  strip.clear();
-  strip.show();
-
-  // connect to wifi
-  DEBUG_PRINTLN("Connecting to WiFi");
-  connectWifi(ssid, password);
-
-  delay(1000);
-
-  DEBUG_PRINTLN("Done with setup()");
-  LEDOff();
-
   DEBUG_PRINTLN("Updating initial status");
   updateStatus();
 
-  DEBUG_PRINTLN("Sending initial status");
-  sendStatus();
+  if(batteryStatus == 1) {
+    // battery state is low so go to deep sleep
+    DEBUG_PRINTLN("Battery is low!!! Going to sleep in 1 second");
+    delay(1000);
+    ESP.deepSleep(SLEEPSECONDS * 1000000);
+  } else {
+    // enable leds
+    DEBUG_PRINTLN("Enabling LED strip");
+    strip.begin();
+    strip.clear();
+    strip.show();
   
-//  DEBUG_PRINTLN("Going to sleep in 1 second");
-//  delay(1000);
-//  ESP.deepSleep(SLEEPSECONDS * 1000000);
+    // connect to wifi
+    DEBUG_PRINTLN("Connecting to WiFi");
+    connectWifi(ssid, password);
+  
+    delay(1000);
+  
+    DEBUG_PRINTLN("Done with setup()");
+    LEDOff();
+  
+    DEBUG_PRINTLN("Sending initial status");
+    sendStatus();
+  }
 }
 
 void loop() {
@@ -144,6 +149,15 @@ void loop() {
     for(k=0; k < 10; k++) {
       if(elapsedSeconds++ >= 60) {
         updateStatus();
+        if(batteryStatus == 1) {
+          // battery state is low so go to deep sleep
+          DEBUG_PRINTLN("Battery is low!!! Disabling LED strip and going to deep sleep!");
+          delay(1000);
+          strip.clear();
+          strip.show();
+          delay(1000);
+          ESP.deepSleep(SLEEPSECONDS * 1000000);
+        }
         sendStatus();
         if(ledShow == 0) {
           strip.clear();
@@ -183,11 +197,14 @@ void updateStatus() {
   DEBUG_PRINTLN("Getting battery status");
   uint8_t battChg = !digitalRead(BATTCHARGEPIN);
   uint8_t battDone = !digitalRead(BATTDONEPIN);
-  batteryStatus = battDone + (battChg * 2);
+  uint8_t battPG = !digitalRead(BATTPGPIN);
+  batteryStatus = battChg + (battDone * 2) + (battPG * 4);
   DEBUG_PRINT("Read raw values CHARGE:");
   DEBUG_PRINTDEC(battChg);
   DEBUG_PRINT(" DONE:");
   DEBUG_PRINTDEC(battDone);
+  DEBUG_PRINT(" POWER GOOD:");
+  DEBUG_PRINTDEC(battPG);
   DEBUG_PRINTLN();
 
   DEBUG_PRINTLN("updateStatus() done");
