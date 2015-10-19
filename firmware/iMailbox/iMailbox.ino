@@ -108,29 +108,27 @@ void setup() {
   updateStatus();
 
   if(batteryStatus == 1) {
-    // battery state is low so go to deep sleep
-    DEBUG_PRINTLN("Battery is low!!! Going to sleep in 1 second");
-    delay(1000);
-    ESP.deepSleep(SLEEPSECONDS * 1000000);
-  } else {
-    // enable leds
-    DEBUG_PRINTLN("Enabling LED strip");
-    strip.begin();
-    strip.clear();
-    strip.show();
-  
-    // connect to wifi
-    DEBUG_PRINTLN("Connecting to WiFi");
-    connectWifi(ssid, password);
-  
-    delay(1000);
-  
-    DEBUG_PRINTLN("Done with setup()");
-    LEDOff();
-  
-    DEBUG_PRINTLN("Sending initial status");
-    sendStatus();
+    // battery state is low
+    DEBUG_PRINTLN("Battery is low!!!");
   }
+   
+  // enable leds
+  DEBUG_PRINTLN("Enabling LED strip");
+  strip.begin();
+  strip.clear();
+  strip.show();
+
+  // connect to wifi
+  DEBUG_PRINTLN("Connecting to WiFi");
+  connectWifi(ssid, password);
+
+  delay(1000);
+
+  DEBUG_PRINTLN("Done with setup()");
+  LEDOff();
+
+  DEBUG_PRINTLN("Sending initial status");
+  sendStatus();
 }
 
 void loop() {
@@ -150,13 +148,8 @@ void loop() {
       if(elapsedSeconds++ >= 60) {
         updateStatus();
         if(batteryStatus == 1) {
-          // battery state is low so go to deep sleep
-          DEBUG_PRINTLN("Battery is low!!! Disabling LED strip and going to deep sleep!");
-          delay(1000);
-          strip.clear();
-          strip.show();
-          delay(1000);
-          ESP.deepSleep(SLEEPSECONDS * 1000000);
+          // battery state is low
+          DEBUG_PRINTLN("Battery is low!!!");
         }
         sendStatus();
         if(ledShow == 0) {
