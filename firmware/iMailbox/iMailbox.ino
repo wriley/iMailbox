@@ -28,7 +28,7 @@
 #define BATTCHARGEPIN 4
 #define BATTDONEPIN 5
 #define BATTPGPIN 12
-#define SLEEPSECONDS 300
+#define SLEEPSECONDS 1800
 #define RETRIES 30
 
 // EEPROM addresses
@@ -109,7 +109,11 @@ void setup() {
 
   if(batteryStatus == 1) {
     // battery state is low
-    DEBUG_PRINTLN("Battery is low!!!");
+    DEBUG_PRINTLN("Battery is low!!! Going to sleep after sending status");
+    delay(1000);
+    sendStatus();
+    delay(500);
+    ESP.deepSleep(SLEEPSECONDS * 1000000);
   }
    
   // enable leds
@@ -149,7 +153,11 @@ void loop() {
         updateStatus();
         if(batteryStatus == 1) {
           // battery state is low
-          DEBUG_PRINTLN("Battery is low!!!");
+          DEBUG_PRINTLN("Battery is low!!! Going to sleep after sending status");
+          delay(1000);
+          sendStatus();
+          delay(500);
+          ESP.deepSleep(SLEEPSECONDS * 1000000);
         }
         sendStatus();
         if(ledShow == 0) {
