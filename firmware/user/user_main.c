@@ -13,6 +13,7 @@
 #include "espmissingincludes.h"
 #include "ets_sys.h"
 #include "osapi.h"
+#include "os_type.h"
 #include "httpd.h"
 #include "io.h"
 #include "httpdespfs.h"
@@ -21,6 +22,8 @@
 #include "stdout.h"
 #include "auth.h"
 #include "wifi.h"
+#include "status.h"
+#include "cgistatus.h"
 
 //Function that tells the authentication system what users/passwords live on the system.
 //This is disabled in the default build; if you want to try it, enable the authBasic line in
@@ -54,8 +57,9 @@ HttpdBuiltInUrl builtInUrls[]={
 	{"/", cgiRedirect, "/index.tpl"},
 	{"/flash.bin", cgiReadFlash, NULL},
 	{"/led.tpl", cgiEspFsTemplate, tplLed},
-	{"/index.tpl", cgiEspFsTemplate, tplCounter},
+	{"/index.tpl", cgiEspFsTemplate, tplIndex},
 	{"/led.cgi", cgiLed, NULL},
+	{"/status.cgi", cgiStatus, NULL},
 
 	//Routines to make the /wifi URL and everything beneath it work.
 
@@ -73,11 +77,38 @@ HttpdBuiltInUrl builtInUrls[]={
 	{NULL, NULL, NULL}
 };
 
+static os_timer_t timerUptime;
+static os_timer_t timerADC;
+
+void timerFunctionUptime(void *arg)
+{
+	incrementUptimeSeconds();
+	long ut = getUptimeSeconds();
+	//os_printf("%s: %d\n", __FUNCTION__, ut);
+}
+
+void timerFunctionADC(void *arg)
+{
+	updateLightReading();
+}
+
+void timerInit(void) {
+	// uptimeSeconds
+	os_timer_disarm(&timerUptime);
+	os_timer_setfn(&timerUptime, (os_timer_func_t *)timerFunctionUptime, NULL);
+	os_timer_arm(&timerUptime, 1000, 1);
+
+	// lightReading
+	os_timer_disarm(&timerADC);
+	os_timer_setfn(&timerADC, (os_timer_func_t *)timerFunctionADC, NULL);
+	os_timer_arm(&timerADC, 60000, 1);
+}
 
 //Main routine. Initialize stdout, the I/O and the webserver and we're done.
 void user_init(void) {
 	stdoutInit();
 	ioInit();
+	timerInit();
 	wifiInit();
 	httpdInit(builtInUrls, 80);
 	os_printf("\nReady\n");

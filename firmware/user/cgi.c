@@ -22,6 +22,7 @@ flash as a binary. Also handles the hit counter on the main page.
 #include "io.h"
 #include <ip_addr.h>
 #include "espmissingincludes.h"
+#include "status.h"
 
 
 //cause I can't be bothered to write an ioGetLed()
@@ -65,16 +66,16 @@ void ICACHE_FLASH_ATTR tplLed(HttpdConnData *connData, char *token, void **arg) 
 	httpdSend(connData, buff, -1);
 }
 
-static long hitCounter=0;
-
 //Template code for the counter on the index page.
-void ICACHE_FLASH_ATTR tplCounter(HttpdConnData *connData, char *token, void **arg) {
+void ICACHE_FLASH_ATTR tplIndex(HttpdConnData *connData, char *token, void **arg) {
 	char buff[128];
 	if (token==NULL) return;
 
-	if (os_strcmp(token, "counter")==0) {
-		hitCounter++;
-		os_sprintf(buff, "%ld", hitCounter);
+	long ut = getUptimeSeconds();
+
+	if (os_strcmp(token, "uptimeSeconds")==0) {
+
+		os_sprintf(buff, "%ld", ut);
 	}
 	httpdSend(connData, buff, -1);
 }

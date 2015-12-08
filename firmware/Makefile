@@ -146,7 +146,7 @@ mkespfsimage/mkespfsimage: mkespfsimage/
 	make -C mkespfsimage -f Makefile.windows
 
 htmlflash: webpages.espfs
-	if [ $$(stat -c '%s' webpages.espfs) -gt $$(( 0x2E000 )) ]; then echo "webpages.espfs too big!"; false; fi
+	if [ $$(c://gnuwin32//bin//stat.exe -c '%s' webpages.espfs) -gt $$(( 0x2E000 )) ]; then echo "webpages.espfs too big!"; false; fi
 	$(ESPTOOL) -p $(ESPPORT) write_flash 0x12000 webpages.espfs
 
 clean:
