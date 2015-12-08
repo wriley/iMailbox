@@ -1,2 +1,4 @@
 firmware/include/user_config.h
 firmware/build
+firmware/firmware
+firmware/webpages.espfs
