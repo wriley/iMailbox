@@ -1,0 +1,45 @@
+<html><head><title>iMailbox - Set LED Color</title>
+<link rel="stylesheet" type="text/css" href="../style.css">
+<link rel="stylesheet" href="themes.css">
+<script type="text/javascript" src="colorpicker.min.js"></script>
+<style type="text/css">
+	#picker { width: 200px; height: 200px }
+    #slide { width: 30px; height: 200px }
+    #example { width: 40px; height: 40px; }
+</style>
+</head>
+<body>
+<div id="main">
+<div id="color-picker" class="cp-default">
+	<div class="picker-wrapper">
+		<div id="picker" class="picker"></div>
+		<div id="picker-indicator" class="picker-indicator"></div>
+	</div>
+	<div class="slide-wrapper">
+		<div id="slide" class="slide"></div>
+		<div id="slide-indicator" class="slide-indicator"></div>
+	</div>
+	<div id="example" class="slide-wrapper">LED</div>
+	<div class="slide-wrapper">
+	<form method="post" action="setcolor.cgi">
+		<input type="hidden" name="rgb" value="">
+		<input type="submit" name="Set Color" value="1">
+	</form>
+	</div>
+</div>
+<script type="text/javascript">
+	cp = ColorPicker(document.getElementById('slide'), document.getElementById('picker'), 
+			function(hex, hsv, rgb, mousePicker, mouseSlide) {
+				currentColor = hex;
+				ColorPicker.positionIndicators(
+					document.getElementById('slide-indicator'),
+					document.getElementById('picker-indicator'),
+					mouseSlide, mousePicker
+				);
+				var exampleBox = document.getElementById("example");
+				exampleBox.style.backgroundColor = hex;
+			});
+	cp.setHex('#D4EDFB');
+</script>
+</div>
+</body></html>

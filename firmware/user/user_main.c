@@ -23,6 +23,7 @@
 #include "auth.h"
 #include "wifi.h"
 #include "status.h"
+#include "ws2812.h"
 
 
 //Function that tells the authentication system what users/passwords live on the system.
@@ -55,14 +56,15 @@ should be placed above the URLs they protect.
 */
 HttpdBuiltInUrl builtInUrls[]={
 	{"/", cgiRedirect, "/index.tpl"},
-	{"/flash.bin", cgiReadFlash, NULL},
+	//{"/flash.bin", cgiReadFlash, NULL},
 	{"/index.tpl", cgiEspFsTemplate, tplIndex},
 	{"/status.cgi", cgiStatus, NULL},
 
 	//Routines to make the /wifi URL and everything beneath it work.
 
 //Enable the line below to protect the WiFi configuration with an username/password combo.
-//	{"/wifi/*", authBasic, myPassFn},
+	//{"/wifi/*", authBasic, myPassFn},
+	//{"/admin/*", authBasic, myPassFn},
 
 	{"/wifi", cgiRedirect, "/wifi/wifi.tpl"},
 	{"/wifi/", cgiRedirect, "/wifi/wifi.tpl"},
@@ -71,23 +73,31 @@ HttpdBuiltInUrl builtInUrls[]={
 	{"/wifi/connect.cgi", cgiWiFiConnect, NULL},
 	{"/wifi/setmode.cgi", cgiWifiSetMode, NULL},
 
+	{"/admin", cgiRedirect, "/admin/index.html"},
+	{"/admin/", cgiRedirect, "/admin/index.html"},
+	{"/admin/setcolor.cgi", cgiSetColor, NULL},
+
 	{"*", cgiEspFsHook, NULL}, //Catch-all cgi function for the filesystem
 	{NULL, NULL, NULL}
 };
 
+// timers
 static os_timer_t timerUptime;
-static os_timer_t timerADC;
+static os_timer_t timerStatus;
+static os_timer_t timerZabbix;
 
 void timerFunctionUptime(void *arg)
 {
 	incrementUptimeSeconds();
-	long ut = getUptimeSeconds();
-	//os_printf("%s: %d\n", __FUNCTION__, ut);
 }
 
-void timerFunctionADC(void *arg)
+void timerFunctionStatus(void *arg)
 {
-	updateLightReading();
+	updateStatus();
+}
+
+void timerFunctionZabbix(void *arg) {
+	// TODO
 }
 
 void timerInit(void) {
@@ -96,17 +106,23 @@ void timerInit(void) {
 	os_timer_setfn(&timerUptime, (os_timer_func_t *)timerFunctionUptime, NULL);
 	os_timer_arm(&timerUptime, 1000, 1);
 
-	// lightReading
-	os_timer_disarm(&timerADC);
-	os_timer_setfn(&timerADC, (os_timer_func_t *)timerFunctionADC, NULL);
-	os_timer_arm(&timerADC, 60000, 1);
+	// lightReading from ADC
+	os_timer_disarm(&timerStatus);
+	os_timer_setfn(&timerStatus, (os_timer_func_t *)timerFunctionStatus, NULL);
+	os_timer_arm(&timerStatus, 60000, 1);
+
+	// send Zabbix data
+	os_timer_disarm(&timerZabbix);
+	os_timer_setfn(&timerZabbix, (os_timer_func_t *)timerFunctionZabbix, NULL);
+	os_timer_arm(&timerZabbix, 60000, 1);
 }
 
 //Main routine. Initialize stdout, the I/O and the webserver and we're done.
 void user_init(void) {
 	stdoutInit();
 	ioInit();
-	updateLightReading();
+	wsShowColor(0, 0, 0);
+	updateStatus();
 	timerInit();
 	wifiInit();
 	httpdInit(builtInUrls, 80);

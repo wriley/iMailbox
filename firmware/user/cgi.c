@@ -30,7 +30,8 @@ void ICACHE_FLASH_ATTR tplIndex(HttpdConnData *connData, char *token, void **arg
        char buff[128];
        if (token==NULL) return;
 
-       long ut = getUptimeSeconds();
+       iMailboxStatus currentStatus = getStatus();
+       long ut = currentStatus.uptimeSeconds;
 
        if (os_strcmp(token, "uptimeSeconds")==0) {
 
@@ -128,5 +129,23 @@ int ICACHE_FLASH_ATTR cgiStatus(HttpdConnData *connData) {
 			);
 	httpdSend(connData, buff, len);
 
+	return HTTPD_CGI_DONE;
+}
+
+int ICACHE_FLASH_ATTR cgiSetColor(HttpdConnData *connData) {
+	int len;
+	char buff[1024];
+
+	if (connData->conn==NULL) {
+		//Connection aborted. Clean up.
+		return HTTPD_CGI_DONE;
+	}
+
+	len=httpdFindArg(connData->postBuff, "rgb", buff, sizeof(buff));
+	if (len!=0) {
+		//TODO
+	}
+
+	httpdRedirect(connData, "/admin/setcolor.html");
 	return HTTPD_CGI_DONE;
 }

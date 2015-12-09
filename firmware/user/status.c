@@ -2,6 +2,7 @@
 #include "user_interface.h"
 #include "status.h"
 #include "io.h"
+#include "zabbix.h"
 
 #define BATTCHARGEGPIO 4
 #define BATTDONEGPIO 5
@@ -19,7 +20,7 @@ long getUptimeSeconds(void) {
 
 void updateLightReading(void) {
 	myStatus.lightReading = system_adc_read();
-	os_printf("%s: %d\n", __FUNCTION__, myStatus.lightReading);
+	//os_printf("%s: %d\n", __FUNCTION__, myStatus.lightReading);
 }
 
 void updateBatteryStatus(void) {
@@ -32,4 +33,9 @@ void updateBatteryStatus(void) {
 iMailboxStatus getStatus(void) {
 	updateBatteryStatus();
 	return myStatus;
+}
+
+void updateStatus(void) {
+	updateLightReading();
+	updateBatteryStatus();
 }
