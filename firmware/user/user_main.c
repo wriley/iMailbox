@@ -23,7 +23,7 @@
 #include "auth.h"
 #include "wifi.h"
 #include "status.h"
-#include "cgistatus.h"
+
 
 //Function that tells the authentication system what users/passwords live on the system.
 //This is disabled in the default build; if you want to try it, enable the authBasic line in
@@ -56,9 +56,7 @@ should be placed above the URLs they protect.
 HttpdBuiltInUrl builtInUrls[]={
 	{"/", cgiRedirect, "/index.tpl"},
 	{"/flash.bin", cgiReadFlash, NULL},
-	{"/led.tpl", cgiEspFsTemplate, tplLed},
 	{"/index.tpl", cgiEspFsTemplate, tplIndex},
-	{"/led.cgi", cgiLed, NULL},
 	{"/status.cgi", cgiStatus, NULL},
 
 	//Routines to make the /wifi URL and everything beneath it work.
@@ -108,6 +106,7 @@ void timerInit(void) {
 void user_init(void) {
 	stdoutInit();
 	ioInit();
+	updateLightReading();
 	timerInit();
 	wifiInit();
 	httpdInit(builtInUrls, 80);

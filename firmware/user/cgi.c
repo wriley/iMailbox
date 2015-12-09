@@ -24,6 +24,21 @@ flash as a binary. Also handles the hit counter on the main page.
 #include "espmissingincludes.h"
 #include "status.h"
 
+//Template code for the counter on the index page.
+void ICACHE_FLASH_ATTR tplIndex(HttpdConnData *connData, char *token, void **arg)
+{
+       char buff[128];
+       if (token==NULL) return;
+
+       long ut = getUptimeSeconds();
+
+       if (os_strcmp(token, "uptimeSeconds")==0) {
+
+               os_sprintf(buff, "%ld", ut);
+       }
+       httpdSend(connData, buff, -1);
+}
+
 
 //cause I can't be bothered to write an ioGetLed()
 static char currLedState=0;
@@ -32,7 +47,7 @@ static char currLedState=0;
 int ICACHE_FLASH_ATTR cgiLed(HttpdConnData *connData) {
 	int len;
 	char buff[1024];
-	
+
 	if (connData->conn==NULL) {
 		//Connection aborted. Clean up.
 		return HTTPD_CGI_DONE;
@@ -47,7 +62,6 @@ int ICACHE_FLASH_ATTR cgiLed(HttpdConnData *connData) {
 	httpdRedirect(connData, "led.tpl");
 	return HTTPD_CGI_DONE;
 }
-
 
 
 //Template code for the led page.
@@ -65,21 +79,6 @@ void ICACHE_FLASH_ATTR tplLed(HttpdConnData *connData, char *token, void **arg) 
 	}
 	httpdSend(connData, buff, -1);
 }
-
-//Template code for the counter on the index page.
-void ICACHE_FLASH_ATTR tplIndex(HttpdConnData *connData, char *token, void **arg) {
-	char buff[128];
-	if (token==NULL) return;
-
-	long ut = getUptimeSeconds();
-
-	if (os_strcmp(token, "uptimeSeconds")==0) {
-
-		os_sprintf(buff, "%ld", ut);
-	}
-	httpdSend(connData, buff, -1);
-}
-
 
 //Cgi that reads the SPI flash. Assumes 512KByte flash.
 int ICACHE_FLASH_ATTR cgiReadFlash(HttpdConnData *connData) {
@@ -103,3 +102,31 @@ int ICACHE_FLASH_ATTR cgiReadFlash(HttpdConnData *connData) {
 	if (*pos>=0x40200000+(512*1024)) return HTTPD_CGI_DONE; else return HTTPD_CGI_MORE;
 }
 
+int ICACHE_FLASH_ATTR cgiStatus(HttpdConnData *connData) {
+	int len;
+	char buff[1024];
+	httpdStartResponse(connData, 200);
+	httpdHeader(connData, "Content-Type", "text/json");
+	httpdEndHeaders(connData);
+
+	iMailboxStatus myStatus = getStatus();
+
+	len=os_sprintf(buff, "{\n \"result\": { "
+			"\n\"ledMode\": \"%d\","
+			"\n\"ledShow\": \"%d\","
+			"\n\"lightReading\": \"%d\","
+			"\n\"lightThreshold\": \"%d\","
+			"\n\"batteryStatus\": \"%d\","
+			"\n\"uptimeSeconds\": \"%d\""
+			"\n }\n}\n",
+			myStatus.ledMode,
+			myStatus.ledShow,
+			myStatus.lightReading,
+			myStatus.lightThreshold,
+			myStatus.batteryStatus,
+			myStatus.uptimeSeconds
+			);
+	httpdSend(connData, buff, len);
+
+	return HTTPD_CGI_DONE;
+}

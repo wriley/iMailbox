@@ -3,9 +3,10 @@
 
 #include "httpd.h"
 
+void tplIndex(HttpdConnData *connData, char *token, void **arg);
 int cgiLed(HttpdConnData *connData);
 void tplLed(HttpdConnData *connData, char *token, void **arg);
 int cgiReadFlash(HttpdConnData *connData);
-void tplIndex(HttpdConnData *connData, char *token, void **arg);
+int cgiStatus(HttpdConnData *connData);
 
 #endif
