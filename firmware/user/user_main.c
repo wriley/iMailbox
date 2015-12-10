@@ -56,9 +56,6 @@ should be placed above the URLs they protect.
 */
 HttpdBuiltInUrl builtInUrls[]={
 	{"/", cgiRedirect, "/index.tpl"},
-	//{"/flash.bin", cgiReadFlash, NULL},
-	{"/led.tpl", cgiEspFsTemplate, tplLed},
-	{"/led.cgi", cgiLed, NULL},
 	{"/index.tpl", cgiEspFsTemplate, tplIndex},
 	{"/status.cgi", cgiStatus, NULL},
 
@@ -77,7 +74,11 @@ HttpdBuiltInUrl builtInUrls[]={
 
 	{"/admin", cgiRedirect, "/admin/index.html"},
 	{"/admin/", cgiRedirect, "/admin/index.html"},
+	{"/admin/setcolor.tpl", cgiEspFsTemplate, tplSetColor},
 	{"/admin/setcolor.cgi", cgiSetColor, NULL},
+	{"/admin/led.tpl", cgiEspFsTemplate, tplLed},
+	{"/admin/led.cgi", cgiLed, NULL},
+	{"/admin/flash.bin", cgiReadFlash, NULL},
 
 	{"*", cgiEspFsHook, NULL}, //Catch-all cgi function for the filesystem
 	{NULL, NULL, NULL}
@@ -123,6 +124,8 @@ void timerInit(void) {
 void user_init(void) {
 	stdoutInit();
 	ioInit();
+	wsShowColor(0, 0, 0);
+	wsShowColor(0, 0, 0);
 	wsShowColor(0, 0, 0);
 	updateStatus();
 	timerInit();

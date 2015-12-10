@@ -60,11 +60,5 @@ window.onload=function(e) {
 <strong>Light Reading:</strong> <span id="lightReading">--</span><br>
 <strong>Battery Status:</strong> <span id="batteryStatus">--</span><br> 
 </p>
-<hr>
-<p>
-<a href="/wifi">WiFi config</a><br>
-<a href="/admin">Admin</a><br>
-<a href="/led.tpl">Status LED</a><br>
-</p>
 </div>
 </body></html>

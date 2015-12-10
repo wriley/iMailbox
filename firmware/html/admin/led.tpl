@@ -1,5 +1,5 @@
-<html><head><title>Test</title>
-<link rel="stylesheet" type="text/css" href="style.css">
+<html><head><title>iMailbox - Status LED</title>
+<link rel="stylesheet" type="text/css" href="../style.css">
 </head>
 <body>
 <div id="main">

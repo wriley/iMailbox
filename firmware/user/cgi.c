@@ -25,7 +25,6 @@ flash as a binary. Also handles the hit counter on the main page.
 #include "status.h"
 #include "ws2812.h"
 
-//Template code for the counter on the index page.
 void ICACHE_FLASH_ATTR tplIndex(HttpdConnData *connData, char *token, void **arg)
 {
        char buff[128];
@@ -41,9 +40,8 @@ void ICACHE_FLASH_ATTR tplIndex(HttpdConnData *connData, char *token, void **arg
        httpdSend(connData, buff, -1);
 }
 
-
-//cause I can't be bothered to write an ioGetLed()
 static char currLedState=1;
+static long currentColor = 0;
 
 //Cgi that turns the LED on or off according to the 'led' param in the POST data
 int ICACHE_FLASH_ATTR cgiLed(HttpdConnData *connData) {
@@ -133,6 +131,17 @@ int ICACHE_FLASH_ATTR cgiStatus(HttpdConnData *connData) {
 	return HTTPD_CGI_DONE;
 }
 
+void ICACHE_FLASH_ATTR tplSetColor(HttpdConnData *connData, char *token, void **arg) {
+	char buff[128];
+	if (token==NULL) return;
+
+	os_strcpy(buff, "00000");
+	if (os_strcmp(token, "currentColor")==0) {
+		os_sprintf((char *)&buff, "%06x", currentColor);
+	}
+	httpdSend(connData, buff, -1);
+}
+
 int ICACHE_FLASH_ATTR cgiSetColor(HttpdConnData *connData) {
 	int len;
 	char buff[1024];
@@ -161,9 +170,11 @@ int ICACHE_FLASH_ATTR cgiSetColor(HttpdConnData *connData) {
 		b = atoi(buff);
 	}
 
+	currentColor = ((r & 0xff) << 16) + ((g & 0xff) << 8) + (b & 0xff);
+
 	os_printf("%s: 0x%0x 0x%0x 0x%0x\n", __FUNCTION__, r, g, b);
 	wsShowColor(r, g, b);
 
-	httpdRedirect(connData, "/admin/setcolor.html");
+	httpdRedirect(connData, "/admin/setcolor.tpl");
 	return HTTPD_CGI_DONE;
 }
