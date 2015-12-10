@@ -4,5 +4,6 @@
 #define WSGPIO 2
 
 void wsShowColor(unsigned char r, unsigned char g, unsigned char b);
+int  gpio_ws2812( char *buffer, int length );
 
 #endif

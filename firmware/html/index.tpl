@@ -62,7 +62,9 @@ window.onload=function(e) {
 </p>
 <hr>
 <p>
-<a href="/wifi">WiFi config</a>
+<a href="/wifi">WiFi config</a><br>
+<a href="/admin">Admin</a><br>
+<a href="/led.tpl">Status LED</a><br>
 </p>
 </div>
 </body></html>

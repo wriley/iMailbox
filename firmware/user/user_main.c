@@ -57,6 +57,8 @@ should be placed above the URLs they protect.
 HttpdBuiltInUrl builtInUrls[]={
 	{"/", cgiRedirect, "/index.tpl"},
 	//{"/flash.bin", cgiReadFlash, NULL},
+	{"/led.tpl", cgiEspFsTemplate, tplLed},
+	{"/led.cgi", cgiLed, NULL},
 	{"/index.tpl", cgiEspFsTemplate, tplIndex},
 	{"/status.cgi", cgiStatus, NULL},
 

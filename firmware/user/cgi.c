@@ -23,6 +23,7 @@ flash as a binary. Also handles the hit counter on the main page.
 #include <ip_addr.h>
 #include "espmissingincludes.h"
 #include "status.h"
+#include "ws2812.h"
 
 //Template code for the counter on the index page.
 void ICACHE_FLASH_ATTR tplIndex(HttpdConnData *connData, char *token, void **arg)
@@ -42,7 +43,7 @@ void ICACHE_FLASH_ATTR tplIndex(HttpdConnData *connData, char *token, void **arg
 
 
 //cause I can't be bothered to write an ioGetLed()
-static char currLedState=0;
+static char currLedState=1;
 
 //Cgi that turns the LED on or off according to the 'led' param in the POST data
 int ICACHE_FLASH_ATTR cgiLed(HttpdConnData *connData) {
@@ -73,9 +74,9 @@ void ICACHE_FLASH_ATTR tplLed(HttpdConnData *connData, char *token, void **arg) 
 	os_strcpy(buff, "Unknown");
 	if (os_strcmp(token, "ledstate")==0) {
 		if (currLedState) {
-			os_strcpy(buff, "on");
-		} else {
 			os_strcpy(buff, "off");
+		} else {
+			os_strcpy(buff, "on");
 		}
 	}
 	httpdSend(connData, buff, -1);
@@ -141,10 +142,27 @@ int ICACHE_FLASH_ATTR cgiSetColor(HttpdConnData *connData) {
 		return HTTPD_CGI_DONE;
 	}
 
-	len=httpdFindArg(connData->postBuff, "rgb", buff, sizeof(buff));
+	//TODO
+	char r, g, b;
+	os_printf("%s: %s\n", __FUNCTION__, buff);
+
+	len=httpdFindArg(connData->postBuff, "rgb_r", buff, sizeof(buff));
 	if (len!=0) {
-		//TODO
+		r = atoi(buff);
 	}
+
+	len=httpdFindArg(connData->postBuff, "rgb_g", buff, sizeof(buff));
+	if (len!=0) {
+		g = atoi(buff);
+	}
+
+	len=httpdFindArg(connData->postBuff, "rgb_b", buff, sizeof(buff));
+	if (len!=0) {
+		b = atoi(buff);
+	}
+
+	os_printf("%s: 0x%0x 0x%0x 0x%0x\n", __FUNCTION__, r, g, b);
+	wsShowColor(r, g, b);
 
 	httpdRedirect(connData, "/admin/setcolor.html");
 	return HTTPD_CGI_DONE;

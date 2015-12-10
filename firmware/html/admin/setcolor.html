@@ -10,36 +10,44 @@
 </head>
 <body>
 <div id="main">
-<div id="color-picker" class="cp-default">
-	<div class="picker-wrapper">
-		<div id="picker" class="picker"></div>
-		<div id="picker-indicator" class="picker-indicator"></div>
+	<div id="color-picker" class="cp-default">
+		<div class="picker-wrapper">
+			<div id="picker" class="picker"></div>
+			<div id="picker-indicator" class="picker-indicator"></div>
+		</div>
+		<div class="slide-wrapper">
+			<div id="slide" class="slide"></div>
+			<div id="slide-indicator" class="slide-indicator"></div>
+		</div>
+		<div id="example" class="slide-wrapper"></div>
+		<div class="slide-wrapper">
+		<form method="post" action="setcolor.cgi">
+			<input type="hidden" name="rgb_r" id="rgb_r" value="0">
+			<input type="hidden" name="rgb_g" id="rgb_g" value="0">
+			<input type="hidden" name="rgb_b" id="rgb_b" value="0">
+			<input type="submit" name="setcolor" value="Set Color">
+		</form>
+		</div>
 	</div>
-	<div class="slide-wrapper">
-		<div id="slide" class="slide"></div>
-		<div id="slide-indicator" class="slide-indicator"></div>
-	</div>
-	<div id="example" class="slide-wrapper">LED</div>
-	<div class="slide-wrapper">
-	<form method="post" action="setcolor.cgi">
-		<input type="hidden" name="rgb" value="">
-		<input type="submit" name="Set Color" value="1">
-	</form>
-	</div>
-</div>
-<script type="text/javascript">
-	cp = ColorPicker(document.getElementById('slide'), document.getElementById('picker'), 
-			function(hex, hsv, rgb, mousePicker, mouseSlide) {
-				currentColor = hex;
-				ColorPicker.positionIndicators(
-					document.getElementById('slide-indicator'),
-					document.getElementById('picker-indicator'),
-					mouseSlide, mousePicker
-				);
-				var exampleBox = document.getElementById("example");
-				exampleBox.style.backgroundColor = hex;
-			});
-	cp.setHex('#D4EDFB');
-</script>
+	<script type="text/javascript">
+		cp = ColorPicker(document.getElementById('slide'), document.getElementById('picker'), 
+				function(hex, hsv, rgb, mousePicker, mouseSlide) {
+					currentColor = hex;
+					ColorPicker.positionIndicators(
+						document.getElementById('slide-indicator'),
+						document.getElementById('picker-indicator'),
+						mouseSlide, mousePicker
+					);
+					var el = document.getElementById("example");
+					el.style.backgroundColor = hex;
+					el = document.getElementById("rgb_r");
+					el.value = rgb.r;
+					el = document.getElementById("rgb_g");
+					el.value = rgb.g;
+					el = document.getElementById("rgb_b");
+					el.value = rgb.b;
+				});
+		cp.setHex('#D4EDFB');
+	</script>
 </div>
 </body></html>
