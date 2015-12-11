@@ -24,6 +24,7 @@
 #include "wifi.h"
 #include "status.h"
 #include "ws2812.h"
+#include "zabbix.h"
 
 
 //Function that tells the authentication system what users/passwords live on the system.
@@ -86,35 +87,43 @@ HttpdBuiltInUrl builtInUrls[]={
 
 // timers
 static os_timer_t timerUptime;
-static os_timer_t timerStatus;
 static os_timer_t timerZabbix;
+static os_timer_t timerLEDMode;
 
 void timerFunctionUptime(void *arg)
 {
 	incrementUptimeSeconds();
 }
 
-void timerFunctionStatus(void *arg)
-{
+void timerFunctionZabbix(void *arg) {
 	updateStatus();
+	sendToZabbix();
 }
 
-void timerFunctionZabbix(void *arg) {
-	// TODO
+void timerFunctionLEDMode(void *arg) {
+	char mode = getMode();
+
+	switch(mode) {
+		case SINGLECOLOR:
+			break;
+		case RGBFADE:
+			wsRGBFadeNext();
+			break;
+	}
 }
 
 void timerInit(void) {
-	// uptimeSeconds
+	// increment uptime
 	os_timer_disarm(&timerUptime);
 	os_timer_setfn(&timerUptime, (os_timer_func_t *)timerFunctionUptime, NULL);
 	os_timer_arm(&timerUptime, 1000, 1);
 
-	// lightReading from ADC
-	os_timer_disarm(&timerStatus);
-	os_timer_setfn(&timerStatus, (os_timer_func_t *)timerFunctionStatus, NULL);
-	os_timer_arm(&timerStatus, 60000, 1);
+	// update LEDs based on mode
+	os_timer_disarm(&timerLEDMode);
+	os_timer_setfn(&timerLEDMode, (os_timer_func_t *)timerFunctionLEDMode, NULL);
+	os_timer_arm(&timerLEDMode, 1000, 1);
 
-	// send Zabbix data
+	// update status and send Zabbix data
 	os_timer_disarm(&timerZabbix);
 	os_timer_setfn(&timerZabbix, (os_timer_func_t *)timerFunctionZabbix, NULL);
 	os_timer_arm(&timerZabbix, 60000, 1);
@@ -124,9 +133,10 @@ void timerInit(void) {
 void user_init(void) {
 	stdoutInit();
 	ioInit();
-	wsShowColor(0, 0, 0);
-	wsShowColor(0, 0, 0);
-	wsShowColor(0, 0, 0);
+	setColor(0, 0, 0);
+	setColor(0, 0, 0);
+	setColor(0, 0, 0);
+	setMode(RGBFADE);
 	updateStatus();
 	timerInit();
 	wifiInit();

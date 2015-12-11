@@ -41,7 +41,6 @@ void ICACHE_FLASH_ATTR tplIndex(HttpdConnData *connData, char *token, void **arg
 }
 
 static char currLedState=1;
-static long currentColor = 0;
 
 //Cgi that turns the LED on or off according to the 'led' param in the POST data
 int ICACHE_FLASH_ATTR cgiLed(HttpdConnData *connData) {
@@ -135,6 +134,8 @@ void ICACHE_FLASH_ATTR tplSetColor(HttpdConnData *connData, char *token, void **
 	char buff[128];
 	if (token==NULL) return;
 
+	unsigned long currentColor = getColor();
+
 	os_strcpy(buff, "00000");
 	if (os_strcmp(token, "currentColor")==0) {
 		os_sprintf((char *)&buff, "%06x", currentColor);
@@ -170,10 +171,8 @@ int ICACHE_FLASH_ATTR cgiSetColor(HttpdConnData *connData) {
 		b = atoi(buff);
 	}
 
-	currentColor = ((r & 0xff) << 16) + ((g & 0xff) << 8) + (b & 0xff);
-
-	os_printf("%s: 0x%0x 0x%0x 0x%0x\n", __FUNCTION__, r, g, b);
-	wsShowColor(r, g, b);
+	os_printf("%s: 0x%02x 0x%02x 0x%02x\n", __FUNCTION__, r, g, b);
+	setColor(r, g, b);
 
 	httpdRedirect(connData, "/admin/setcolor.tpl");
 	return HTTPD_CGI_DONE;

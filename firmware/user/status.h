@@ -10,17 +10,26 @@ typedef struct {
 	long uptimeSeconds;
 } iMailboxStatus;
 
-enum {
-	OnBattery,
-	LowBattery,
-	OnSolar,
-	Charging,
-	ChargeComplete,
-	Fault
-} BatteryStatus;
+typedef enum {
+	ONBATTERY,
+	LOWBATTERY,
+	ONSOLAR,
+	CHARGING,
+	CHARGECOMPLETE,
+	FAULT
+} battery_status_t;
+
+typedef enum {
+	SINGLECOLOR,
+	RGBFADE,
+	COLORFADE1,
+	COLORFADE2
+} led_mode_t;
 
 iMailboxStatus getStatus(void);
-void incrementUptimeSeconds(void);
 void updateStatus(void);
+void incrementUptimeSeconds(void);
+char getMode(void);
+void setMode(char);
 
 #endif /* USER_STATUS_H_ */

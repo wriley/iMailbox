@@ -1,9 +1,8 @@
 #ifndef _WS2812_H
 #define _WS2812_H
 
-#define WSGPIO 2
-
-void wsShowColor(unsigned char r, unsigned char g, unsigned char b);
-int  gpio_ws2812( char *buffer, int length );
+void setColor(unsigned char, unsigned char, unsigned char);
+unsigned long getColor(void);
+void wsRGBFadeNext(void);
 
 #endif

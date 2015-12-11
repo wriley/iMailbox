@@ -410,10 +410,9 @@ static void ICACHE_FLASH_ATTR httpdRecvCb(void *arg, char *data, unsigned short 
 }
 
 static void ICACHE_FLASH_ATTR httpdReconCb(void *arg, sint8 err) {
+	os_printf("httpdReconCb\n");
 	HttpdConnData *conn=httpdFindConnData(arg);
-	os_printf("ReconCb\n");
 	if (conn==NULL) return;
-	//Yeah... No idea what to do here. ToDo: figure something out.
 }
 
 static void ICACHE_FLASH_ATTR httpdDisconCb(void *arg) {

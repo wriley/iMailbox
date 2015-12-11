@@ -39,3 +39,11 @@ void updateStatus(void) {
 	updateLightReading();
 	updateBatteryStatus();
 }
+
+char getMode(void) {
+	return myStatus.ledMode;
+}
+
+void setMode(char m) {
+	myStatus.ledMode = m;
+}
