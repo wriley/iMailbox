@@ -116,14 +116,16 @@ int ICACHE_FLASH_ATTR cgiStatus(HttpdConnData *connData) {
 			"\n\"lightReading\": \"%d\","
 			"\n\"lightThreshold\": \"%d\","
 			"\n\"batteryStatus\": \"%d\","
-			"\n\"uptimeSeconds\": \"%d\""
+			"\n\"uptimeSeconds\": \"%d\","
+			"\n\"freeHeap\": \"%u\""
 			"\n }\n}\n",
 			myStatus.ledMode,
 			myStatus.ledShow,
 			myStatus.lightReading,
 			myStatus.lightThreshold,
 			myStatus.batteryStatus,
-			myStatus.uptimeSeconds
+			myStatus.uptimeSeconds,
+			system_get_free_heap_size()
 			);
 	httpdSend(connData, buff, len);
 

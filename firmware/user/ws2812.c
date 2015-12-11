@@ -15,7 +15,7 @@
 	gpio_output_set(bit_value<<gpio_no, ((~bit_value)&0x01)<<gpio_no, 1<<gpio_no,0)
 
 uint32_t currentColor = 0;
-uint8_t currentWheelPosition = 0;
+uint8_t currentWheelPosition = 63;
 
 void  send_ws_0()
 {

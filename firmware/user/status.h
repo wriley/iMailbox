@@ -20,6 +20,7 @@ typedef enum {
 } battery_status_t;
 
 typedef enum {
+	OFF,
 	SINGLECOLOR,
 	RGBFADE,
 	COLORFADE1,

@@ -5,6 +5,7 @@
 <script type="text/javascript">
 var xhr=j();
 var batteryStatusArray=["On Battery","Low Battery","Unknown","Unknown","On Solar","Charging","Charge Complete","Temperature or Timer Fault"];
+var ledModeArray=["Off","Single Color","RGB Fade","Single Color Fade","2 Color Fade"];
 
 function updateInfo() {
 	xhr.open("GET", "status.cgi");
@@ -14,11 +15,7 @@ function updateInfo() {
 			var statusDiv=document.getElementById("uptimeSeconds");
 			statusDiv.innerHTML=secondsToDateString(data.result.uptimeSeconds);
 			var statusDiv=document.getElementById("ledMode");
-			if (data.result.ledMode == 0) {
-				statusDiv.innerHTML="Off";
-			} else {
-				statusDiv.innerHTML="On";
-			}
+			statusDiv.innerHTML=ledModeArray[data.result.ledMode];
 			var statusDiv=document.getElementById("lightReading");
 			statusDiv.innerHTML=data.result.lightReading;
 			var statusDiv=document.getElementById("batteryStatus");
@@ -56,7 +53,7 @@ window.onload=function(e) {
 <h1>iMailbox</h1>
 <p>
 <strong>Uptime:</strong> <span id="uptimeSeconds">--</span><br>
-<strong>LEDs:</strong> <span id="ledMode">--</span><br>
+<strong>LED Mode:</strong> <span id="ledMode">--</span><br>
 <strong>Light Reading:</strong> <span id="lightReading">--</span><br>
 <strong>Battery Status:</strong> <span id="batteryStatus">--</span><br> 
 </p>

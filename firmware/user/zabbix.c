@@ -116,11 +116,15 @@ void sendKeyVal(char *key, char *val) {
 void sendToZabbix() {
 	iMailboxStatus currentStatus = getStatus();
 	base64_encode(sizeof(WIFI_AP_NAME)-1, WIFI_AP_NAME, sizeof(base64host), base64host);
-	char tmp[10];
+	char tmp[16];
 
 	// uptime
 	os_sprintf((char *)&tmp, "%u", currentStatus.uptimeSeconds);
 	sendKeyVal("uptime", (char *)&tmp);
+
+	// free heap
+	os_sprintf((char *)&tmp, "%u", system_get_free_heap_size());
+	sendKeyVal("freeHeap", (char *)&tmp);
 
 	// lightReading
 	os_sprintf((char *)&tmp, "%u", currentStatus.lightReading);
