@@ -25,6 +25,8 @@ at_tcpclient_recon_cb(void *arg, sint8 errType) {
     os_printf("Free mem: %d, err %d\r\n", system_get_free_heap_size(), errType);
 	#endif
     struct espconn *pespconn = (struct espconn *) arg;
+    zabbixPayload *payload = (zabbixPayload *)pespconn->reverse;
+    os_free(payload);
     espconn_delete(pespconn);
 }
 
