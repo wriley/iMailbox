@@ -42,6 +42,8 @@ at_tcpclient_sent_cb(void *arg) {
 void ICACHE_FLASH_ATTR
 at_tcpclient_discon_cb(void *arg) {
 	struct espconn *pespconn = (struct espconn *)arg;
+	zabbixPayload *payload = (zabbixPayload *)pespconn->reverse;
+	os_free(payload);
 	os_free(pespconn->proto.tcp);
 	os_free(pespconn);
 	#ifdef PLATFORM_DEBUG
