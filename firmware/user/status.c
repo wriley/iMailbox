@@ -73,6 +73,8 @@ void setColorSingle(uint32_t c) {
 }
 
 void loadStatus(void) {
+	uint32_t oldUptime = myStatus.uptimeSeconds;
+
 	SpiFlashOpResult result = spi_flash_read(CONFIG_ADDRESS, (uint32 *)&myStatus, sizeof(struct iMailboxStatus));
 	os_printf("%s: Read result - %d\n", __FUNCTION__, result);
 
@@ -88,6 +90,7 @@ void loadStatus(void) {
 		os_printf("%s: colorFade2: %ld\n", __FUNCTION__, myStatus.colorFade2);
 
 		setMode(myStatus.ledMode);
+		myStatus.uptimeSeconds = oldUptime;
 	}
 }
 
