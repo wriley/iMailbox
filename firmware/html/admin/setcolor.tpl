@@ -1,4 +1,4 @@
-<html><head><title>iMailbox - Set LED Color</title>
+<html><head><title>iMailbox - Single LED Color</title>
 <link rel="stylesheet" type="text/css" href="../style.css">
 <link rel="stylesheet" href="themes.css">
 <script type="text/javascript" src="colorpicker.min.js"></script>
@@ -30,6 +30,7 @@ function CheckAndSubmit() {
 </head>
 <body>
 <div id="main">
+<p><a href="/">iMailbox</a> - <a href="/admin">Admin</a> - Single LED Color</p>
 	<div style="height:300px;">
 		<div id="color-picker" class="cp-default">
 			<div class="picker-wrapper">

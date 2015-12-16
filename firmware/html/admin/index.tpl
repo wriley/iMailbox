@@ -7,7 +7,7 @@ var ledModeArray=["Off","Single Color","RGB Fade","Single Color Fade","2 Color F
 
 function createModeSelect() {
 	var el = document.getElementById("ledMode");
-	for (var i = 0; i <= ledModeArray.length; i++) {
+	for (var i = 0; i < ledModeArray.length; i++) {
 		var opt = document.createElement('option');
 		opt.value = i;
 		opt.innerHTML = ledModeArray[i];
@@ -26,7 +26,7 @@ window.onload=function(e) {
 </head>
 <body>
 <div id="main">
-<h1>iMailbox - Admin</h1>
+<p><a href="/">iMailbox</a> - Admin</p>
 <p>
 <form method="post" action="ledmode.cgi">
 <select id="ledMode" name="ledMode">

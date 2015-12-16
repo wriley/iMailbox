@@ -19,7 +19,16 @@ function updateInfo() {
 			var statusDiv=document.getElementById("lightReading");
 			statusDiv.innerHTML=data.result.lightReading;
 			var statusDiv=document.getElementById("batteryStatus");
-			statusDiv.innerHTML=batteryStatusArray[data.result.batteryStatus];
+			if(data.result.batteryStatus == 1 || data.result.batteryStatus == 7) {
+				statusDiv.innerHTML="<font class=\"error\">"+batteryStatusArray[data.result.batteryStatus]+"</font>";
+			} else if(data.result.batteryStatus == 6) {
+				statusDiv.innerHTML="<font class=\"good\">"+batteryStatusArray[data.result.batteryStatus]+"</font>";
+			} else if(data.result.batteryStatus == 4) {
+				statusDiv.innerHTML="<font class=\"solar\">"+batteryStatusArray[data.result.batteryStatus]+"</font>";
+			} else {
+				statusDiv.innerHTML=batteryStatusArray[data.result.batteryStatus];
+			}
+			
 			window.setTimeout(updateInfo, 5000);
 		}
 	}
@@ -50,7 +59,7 @@ window.onload=function(e) {
 </head>
 <body>
 <div id="main">
-<h1>iMailbox</h1>
+<p>iMailbox</p>
 <p>
 <strong>Uptime:</strong> <span id="uptimeSeconds">--</span><br>
 <strong>LED Mode:</strong> <span id="ledMode">--</span><br>

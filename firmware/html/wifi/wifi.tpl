@@ -1,4 +1,4 @@
-<html><head><title>WiFi connection</title>
+<html><head><title>iMailbox - WiFi connection</title>
 <link rel="stylesheet" type="text/css" href="style.css">
 <script type="text/javascript" src="140medley.min.js"></script>
 <script type="text/javascript">
@@ -74,6 +74,7 @@ window.onload=function(e) {
 </head>
 <body>
 <div id="main">
+<p><a href="/">iMailbox</a> - <a href="/admin">Admin</a> - Wifi</p>
 <p>
 Current WiFi mode: %WiFiMode%
 </p>
