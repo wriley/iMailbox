@@ -34,10 +34,6 @@ window.onload=function(e) {
 <input type="submit" name="submit" value="Set LED Mode">
 </form>
 <a href="/admin/setcolor.tpl">Set LED Color</a><br>
-<hr>
-<a href="/wifi">WiFi config</a><br>
-<a href="/admin/led.tpl">Status LED</a><br>
-<a href="/admin/flash.bin">Flash Download</a><br>
 </p>
 </div>
 </body></html>

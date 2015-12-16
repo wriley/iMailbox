@@ -66,5 +66,8 @@ window.onload=function(e) {
 <strong>Light Reading:</strong> <span id="lightReading">--</span><br>
 <strong>Battery Status:</strong> <span id="batteryStatus">--</span><br> 
 </p>
+<div style="text-align: right;">
+<p><a href="/admin">admin</a></p>
+</div>
 </div>
 </body></html>
