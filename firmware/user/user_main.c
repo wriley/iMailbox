@@ -107,16 +107,14 @@ void timerFunctionLEDMode(void *arg) {
 
 	switch(mode) {
 		case SINGLECOLOR:
-			ledShowSingle();
 			break;
 		case RGBFADE:
-			ledShowRGBFade();
+			break;
+		case COLORFADE1:
 			break;
 		case COLORFADE2:
-			ledShowRGBFade2();
 			break;
 		default:
-			ledShow(0);
 			break;
 	}
 }
@@ -142,9 +140,6 @@ void timerInit(void) {
 void user_init(void) {
 	stdoutInit();
 	ioInit();
-	ledShow(0);
-	ledShow(0);
-	ledShow(0);
 	loadStatus();
 	updateStatus();
 	wifiInit();

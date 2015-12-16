@@ -13,6 +13,7 @@
 #define RES 6000    // Width of the low gap between bits to cause a frame to latch
 //#define GPIO_OUTPUT_SET(gpio_no, bit_value) gpio_output_set(bit_value<<gpio_no, ((~bit_value)&0x01)<<gpio_no, 1<<gpio_no,0)
 
+uint32_t pixels[WSPIXELS];
 uint32_t currentColorSingle = 0;
 uint32_t currentColorFade1 = 0;
 uint32_t currentColorFade2 = 0;
@@ -78,18 +79,16 @@ void sendPixel( uint8_t r, uint8_t g , uint8_t b )  {
 }
 
 void show() {
-	ets_delay_us( (RES / 1000UL) + 1);
-}
-
-void wsShowColor(uint8_t r, uint8_t g, uint8_t b) {
 	//os_printf("%s\n", __FUNCTION__);
 	GPIO_OUTPUT_SET(GPIO_ID_PIN(WSGPIO), 0);
 	cli();
 	for(int i = 0; i < WSPIXELS; i++) {
-		sendPixel(r, g, b);
+		uint8_t rgb[3];
+		colorToRGB(rgb, pixels[i]);
+		sendPixel(rgb[0], rgb[1], rgb[2]);
 	}
 	sei();
-	show();
+	ets_delay_us( (RES / 1000UL) + 1);
 }
 
 uint32_t rgbToColor(uint8_t r, uint8_t g, uint8_t b) {
@@ -100,17 +99,6 @@ void colorToRGB(uint8_t *buf, uint32_t c) {
 	buf[0] = (uint8_t)((c >> 16) & 0xff);
 	buf[1] = (uint8_t)((c >> 8) & 0xff);
 	buf[2] = (uint8_t)(c & 0xff);
-}
-
-void ledShow(uint32_t c) {
-	uint8_t rgb[3];
-	colorToRGB(rgb, c);
-	wsShowColor(rgb[0], rgb[1], rgb[2]);
-}
-
-void ledShowSingle() {
-	uint32_t c = getColorSingle();
-	ledShow(c);
 }
 
 uint32_t Wheel(uint8_t WheelPos) {
@@ -126,14 +114,6 @@ uint32_t Wheel(uint8_t WheelPos) {
 	}
 }
 
-void ledShowRGBFade(void) {
-	if(currentWheelPosition < 0 || currentWheelPosition > 255) {
-		currentWheelPosition = 0;
-	}
-	uint32_t newColor = Wheel(currentWheelPosition++);
-	ledShow(newColor);
-}
+void setBrightness(uint8_t b) {
 
-void ledShowRGBFade2(void) {
-	// TODO
 }

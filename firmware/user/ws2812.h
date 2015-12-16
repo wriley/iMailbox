@@ -3,9 +3,4 @@
 
 #include "ets_sys.h"
 
-void ledShow(uint32_t);
-void ledShowSingle(void);
-void ledShowRGBFade(void);
-void ledShowRGBFade2(void);
-
 #endif
