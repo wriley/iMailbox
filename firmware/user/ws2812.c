@@ -4,18 +4,17 @@
 #include "osapi.h"
 #include "user_config.h"
 #include "gpio.h"
+#include "my_stuff.h"
+#include "status.h"
 
-#define cli() __asm__("rsil a2, 3")
-#define sei() __asm__("rsil a2, 0")
 #define nop() __asm__("nop")
 
 #define bitRead(value, bit) (((value) >> (bit)) & 0x01)
 #define RES 6000    // Width of the low gap between bits to cause a frame to latch
-#define GPIO_OUTPUT_SET(gpio_no, bit_value) \
-	gpio_output_set(bit_value<<gpio_no, ((~bit_value)&0x01)<<gpio_no, 1<<gpio_no,0)
+//#define GPIO_OUTPUT_SET(gpio_no, bit_value) gpio_output_set(bit_value<<gpio_no, ((~bit_value)&0x01)<<gpio_no, 1<<gpio_no,0)
 
 uint32_t currentColor = 0;
-uint8_t currentWheelPosition = 63;
+uint8_t currentWheelPosition = 85; //start green
 
 void  send_ws_0()
 {
@@ -100,13 +99,15 @@ void colorToRGB(uint8_t *buf, uint32_t c) {
 	buf[2] = (uint8_t)(c & 0xff);
 }
 
-void setColor(uint8_t r, uint8_t g, uint8_t b) {
-	currentColor = rgbToColor(r, g, b);
-	wsShowColor(r, g, b);
+void ledShow(uint32_t c) {
+	uint8_t rgb[3];
+	colorToRGB(rgb, c);
+	wsShowColor(rgb[0], rgb[1], rgb[2]);
 }
 
-unsigned long getColor(void) {
-	return currentColor;
+void ledShowSingle() {
+	uint32_t c = getColorSingle();
+	ledShow(c);
 }
 
 uint32_t Wheel(uint8_t WheelPos) {
@@ -122,9 +123,10 @@ uint32_t Wheel(uint8_t WheelPos) {
 	}
 }
 
-void wsRGBFadeNext(void) {
+void ledShowRGBFade(void) {
+	if(currentWheelPosition < 0 || currentWheelPosition > 255) {
+		currentWheelPosition = 0;
+	}
 	uint32_t newColor = Wheel(currentWheelPosition++);
-	uint8_t rgb[3];
-	colorToRGB(rgb, newColor);
-	setColor(rgb[0], rgb[1], rgb[2]);
+	ledShow(newColor);
 }

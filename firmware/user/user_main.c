@@ -73,8 +73,10 @@ HttpdBuiltInUrl builtInUrls[]={
 	{"/wifi/connect.cgi", cgiWiFiConnect, NULL},
 	{"/wifi/setmode.cgi", cgiWifiSetMode, NULL},
 
-	{"/admin", cgiRedirect, "/admin/index.html"},
-	{"/admin/", cgiRedirect, "/admin/index.html"},
+	{"/admin", cgiRedirect, "/admin/index.tpl"},
+	{"/admin/", cgiRedirect, "/admin/index.tpl"},
+	{"/admin/index.tpl", cgiEspFsTemplate, tplAdminIndex},
+	{"/admin/ledmode.cgi", cgiLEDMode, NULL},
 	{"/admin/setcolor.tpl", cgiEspFsTemplate, tplSetColor},
 	{"/admin/setcolor.cgi", cgiSetColor, NULL},
 	{"/admin/led.tpl", cgiEspFsTemplate, tplLed},
@@ -105,9 +107,13 @@ void timerFunctionLEDMode(void *arg) {
 
 	switch(mode) {
 		case SINGLECOLOR:
+			ledShowSingle();
 			break;
 		case RGBFADE:
-			wsRGBFadeNext();
+			ledShowRGBFade();
+			break;
+		default:
+			ledShow(0);
 			break;
 	}
 }
@@ -121,7 +127,7 @@ void timerInit(void) {
 	// update LEDs based on mode
 	os_timer_disarm(&timerLEDMode);
 	os_timer_setfn(&timerLEDMode, (os_timer_func_t *)timerFunctionLEDMode, NULL);
-	os_timer_arm(&timerLEDMode, 100, 1);
+	os_timer_arm(&timerLEDMode, 1000, 1);
 
 	// update status and send Zabbix data
 	os_timer_disarm(&timerZabbix);
@@ -133,13 +139,13 @@ void timerInit(void) {
 void user_init(void) {
 	stdoutInit();
 	ioInit();
-	setColor(0, 0, 0);
-	setColor(0, 0, 0);
-	setColor(0, 0, 0);
-	setMode(RGBFADE);
+	ledShow(0);
+	ledShow(0);
+	ledShow(0);
+	loadStatus();
 	updateStatus();
-	timerInit();
 	wifiInit();
 	httpdInit(builtInUrls, 80);
-	os_printf("\nReady\n");
+	timerInit();
+	os_printf("\nReady\nfreeHeap: %d\n", system_get_free_heap_size());
 }

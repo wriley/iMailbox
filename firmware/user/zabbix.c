@@ -13,21 +13,25 @@
 #include "base64.h"
 #include "status.h"
 
-static char base64host[32];
-static char base64key[32];
-static char base64value[32];
+static char base64host[64];
+static char base64key[64];
+static char base64value[64];
 
 
 void ICACHE_FLASH_ATTR
 at_tcpclient_recon_cb(void *arg, sint8 errType) {
 	#ifdef PLATFORM_DEBUG
     os_printf("Reconnect callback\r\n");
-    os_printf("Free mem: %d, err %d\r\n", system_get_free_heap_size(), errType);
 	#endif
     struct espconn *pespconn = (struct espconn *) arg;
     zabbixPayload *payload = (zabbixPayload *)pespconn->reverse;
-    os_free(payload);
     espconn_delete(pespconn);
+    os_free(payload->data);
+    os_free(payload);
+    os_free(pespconn);
+	#ifdef PLATFORM_DEBUG
+    os_printf("Free mem: %d, err %d\r\n", system_get_free_heap_size(), errType);
+	#endif
 }
 
 void ICACHE_FLASH_ATTR
@@ -43,6 +47,7 @@ void ICACHE_FLASH_ATTR
 at_tcpclient_discon_cb(void *arg) {
 	struct espconn *pespconn = (struct espconn *)arg;
 	zabbixPayload *payload = (zabbixPayload *)pespconn->reverse;
+	os_free(payload->data);
 	os_free(payload);
 	os_free(pespconn->proto.tcp);
 	os_free(pespconn);
@@ -95,6 +100,7 @@ senddata(zabbixPayload *payload)
 		   pCon->proto.tcp->remote_port);
 	os_printf(info);
 	#endif
+
 	espconn_connect(pCon);
 }
 
@@ -118,7 +124,9 @@ void sendKeyVal(char *key, char *val) {
 }
 
 void sendToZabbix() {
-	iMailboxStatus currentStatus = getStatus();
+	struct iMailboxStatus currentStatus;
+	currentStatus = getStatus();
+
 	base64_encode(sizeof(WIFI_AP_NAME)-1, WIFI_AP_NAME, sizeof(base64host), base64host);
 	char tmp[16];
 

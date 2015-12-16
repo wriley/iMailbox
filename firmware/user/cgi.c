@@ -23,18 +23,16 @@ flash as a binary. Also handles the hit counter on the main page.
 #include <ip_addr.h>
 #include "espmissingincludes.h"
 #include "status.h"
-#include "ws2812.h"
 
 void ICACHE_FLASH_ATTR tplIndex(HttpdConnData *connData, char *token, void **arg)
 {
        char buff[128];
        if (token==NULL) return;
 
-       iMailboxStatus currentStatus = getStatus();
+       struct iMailboxStatus currentStatus = getStatus();
        long ut = currentStatus.uptimeSeconds;
 
        if (os_strcmp(token, "uptimeSeconds")==0) {
-
                os_sprintf(buff, "%ld", ut);
        }
        httpdSend(connData, buff, -1);
@@ -108,7 +106,7 @@ int ICACHE_FLASH_ATTR cgiStatus(HttpdConnData *connData) {
 	httpdHeader(connData, "Content-Type", "text/json");
 	httpdEndHeaders(connData);
 
-	iMailboxStatus myStatus = getStatus();
+	struct iMailboxStatus myStatus = getStatus();
 
 	len=os_sprintf(buff, "{\n \"result\": { "
 			"\n\"ledMode\": \"%d\","
@@ -136,7 +134,7 @@ void ICACHE_FLASH_ATTR tplSetColor(HttpdConnData *connData, char *token, void **
 	char buff[128];
 	if (token==NULL) return;
 
-	unsigned long currentColor = getColor();
+	uint32_t currentColor = getColorSingle();
 
 	os_strcpy(buff, "00000");
 	if (os_strcmp(token, "currentColor")==0) {
@@ -154,7 +152,6 @@ int ICACHE_FLASH_ATTR cgiSetColor(HttpdConnData *connData) {
 		return HTTPD_CGI_DONE;
 	}
 
-	//TODO
 	char r, g, b;
 	os_printf("%s: %s\n", __FUNCTION__, buff);
 
@@ -174,8 +171,43 @@ int ICACHE_FLASH_ATTR cgiSetColor(HttpdConnData *connData) {
 	}
 
 	os_printf("%s: 0x%02x 0x%02x 0x%02x\n", __FUNCTION__, r, g, b);
-	setColor(r, g, b);
+	uint32_t rgb = ((r & 0xff) << 16) + ((g & 0xff) << 8) + (b & 0xff);
+	setColorSingle(rgb);
 
 	httpdRedirect(connData, "/admin/setcolor.tpl");
+	return HTTPD_CGI_DONE;
+}
+
+void ICACHE_FLASH_ATTR tplAdminIndex(HttpdConnData *connData, char *token, void **arg)
+{
+       char buff[128];
+       if (token==NULL) return;
+
+       struct iMailboxStatus currentStatus = getStatus();
+       uint8_t currentMode = currentStatus.ledMode;
+
+       if (os_strcmp(token, "ledMode")==0) {
+               os_sprintf(buff, "%d", currentMode);
+       }
+       httpdSend(connData, buff, -1);
+}
+
+int ICACHE_FLASH_ATTR cgiLEDMode(HttpdConnData *connData) {
+	int len;
+	char buff[1024];
+
+	if (connData->conn==NULL) {
+		//Connection aborted. Clean up.
+		return HTTPD_CGI_DONE;
+	}
+
+	len=httpdFindArg(connData->postBuff, "ledMode", buff, sizeof(buff));
+	if (len!=0) {
+		uint8_t m = atoi(buff);
+		setMode(m);
+		//os_printf("%s: %d\n", __FUNCTION__, m);
+	}
+
+	httpdRedirect(connData, "index.tpl");
 	return HTTPD_CGI_DONE;
 }

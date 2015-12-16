@@ -10,5 +10,7 @@ void tplSetColor(HttpdConnData *connData, char *token, void **arg);
 int cgiReadFlash(HttpdConnData *connData);
 int cgiStatus(HttpdConnData *connData);
 int cgiSetColor(HttpdConnData *connData);
+void tplAdminIndex(HttpdConnData *connData, char *token, void **arg);
+int cgiLEDMode(HttpdConnData *connData);
 
 #endif

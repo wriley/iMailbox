@@ -1,8 +1,10 @@
 #ifndef _WS2812_H
 #define _WS2812_H
 
-void setColor(unsigned char, unsigned char, unsigned char);
-unsigned long getColor(void);
-void wsRGBFadeNext(void);
+#include "ets_sys.h"
+
+void ledShow(uint32_t);
+void ledShowSingle(void);
+void ledShowRGBFade(void);
 
 #endif

@@ -37,7 +37,7 @@ EXTRA_INCDIR	= include \
 		$(SDK_EXTRA_INCLUDES)
 
 # libraries used in this project, mainly provided by the SDK
-LIBS		= c gcc hal phy pp net80211 wpa main lwip
+LIBS		= c gcc hal phy pp net80211 lwip wpa pwm upgrade main ssl crypto
 
 # compiler flags using during compilation of source files
 CFLAGS		= -Os -g -O2 -std=c99 -Werror -Wpointer-arith -Wundef -Wl,-EL -fno-inline-functions -nostdlib -mlongcalls -mtext-section-literals -D__ets__ -DICACHE_FLASH -Wno-address 

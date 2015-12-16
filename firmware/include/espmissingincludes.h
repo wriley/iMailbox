@@ -43,22 +43,25 @@ void ets_delay_us(int ms);
 
 //Hack: this is defined in SDK 1.4.0 and undefined in 1.3.0. It's only used for this, the symbol itself
 //has no meaning here.
-#ifndef RC_LIMIT_P2P_11N
+
+//#ifndef RC_LIMIT_P2P_11N
 //Defs for SDK <1.4.0
-void *pvPortMalloc(size_t xWantedSize);
-void *pvPortZalloc(size_t);
-void vPortFree(void *ptr);
-void *vPortMalloc(size_t xWantedSize);
-void pvPortFree(void *ptr);
-#else
+
+//void *pvPortMalloc(size_t xWantedSize);
+//void *pvPortZalloc(size_t);
+//void vPortFree(void *ptr);
+//void *vPortMalloc(size_t xWantedSize);
+//void pvPortFree(void *ptr);
+//#else
 void *pvPortMalloc(size_t xWantedSize, const char *file, int line);
 void *pvPortZalloc(size_t, const char *file, int line);
 void vPortFree(void *ptr, const char *file, int line);
 void *vPortMalloc(size_t xWantedSize, const char *file, int line);
 void pvPortFree(void *ptr, const char *file, int line);
-#endif
+//#endif
 
 //Standard PIN_FUNC_SELECT gives a warning. Replace by a non-warning one.
+/*
 #ifdef PIN_FUNC_SELECT
 #undef PIN_FUNC_SELECT
 #define PIN_FUNC_SELECT(PIN_NAME, FUNC)  do { \
@@ -68,5 +71,6 @@ void pvPortFree(void *ptr, const char *file, int line);
                                      |( (((FUNC&BIT2)<<2)|(FUNC&0x3))<<PERIPHS_IO_MUX_FUNC_S) );  \
     } while (0)
 #endif
+*/
 
 #endif

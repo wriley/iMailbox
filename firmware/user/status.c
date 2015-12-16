@@ -1,17 +1,30 @@
 #include "espmissingincludes.h"
+#include <osapi.h>
 #include "user_interface.h"
 #include "status.h"
 #include "io.h"
 #include "zabbix.h"
+#include "spi_flash.h"
 
 #define BATTCHARGEGPIO 4
 #define BATTDONEGPIO 5
 #define BATTPGGPIO 12
 
-static iMailboxStatus myStatus;
+// EEPROM addresses
+#define CONFIG_SECTOR 0x3c
+#define CONFIG_ADDRESS (CONFIG_SECTOR * SPI_FLASH_SEC_SIZE)
+#define EEPROM_OFFSET_MODE 0
+#define EEPROM_OFFSET_THRESHOLD 1
+
+static struct iMailboxStatus myStatus;
 
 void incrementUptimeSeconds(void) {
 	myStatus.uptimeSeconds++;
+	/*
+	if((myStatus.uptimeSeconds % 10) == 0) {
+		os_printf("freeHeap: %d\n", system_get_free_heap_size());
+	}
+	*/
 }
 
 long getUptimeSeconds(void) {
@@ -30,7 +43,7 @@ void updateBatteryStatus(void) {
 	 myStatus.batteryStatus = battChg + (battDone * 2) + (battPG * 4);
 }
 
-iMailboxStatus getStatus(void) {
+struct iMailboxStatus getStatus(void) {
 	updateBatteryStatus();
 	return myStatus;
 }
@@ -46,4 +59,43 @@ char getMode(void) {
 
 void setMode(char m) {
 	myStatus.ledMode = m;
+	saveStatus();
+}
+
+uint32_t getColorSingle(void) {
+	return myStatus.colorSingle;
+}
+
+void setColorSingle(uint32_t c) {
+	myStatus.colorSingle = c;
+	myStatus.ledMode = SINGLECOLOR;
+	saveStatus();
+}
+
+void loadStatus(void) {
+	SpiFlashOpResult result = spi_flash_read(CONFIG_ADDRESS, (uint32 *)&myStatus, sizeof(struct iMailboxStatus));
+	os_printf("%s: Read result - %d\n", __FUNCTION__, result);
+
+	if(result == SPI_FLASH_RESULT_OK) {
+		os_printf("%s: ledMode: %d\n", __FUNCTION__, myStatus.ledMode);
+		os_printf("%s: ledShow: %d\n", __FUNCTION__, myStatus.ledShow);
+		os_printf("%s: lightReading: %d\n", __FUNCTION__, myStatus.lightReading);
+		os_printf("%s: lightThreshold: %d\n", __FUNCTION__, myStatus.lightThreshold);
+		os_printf("%s: batteryStatus: %d\n", __FUNCTION__, myStatus.batteryStatus);
+		os_printf("%s: uptimeSeconds: %ld\n", __FUNCTION__, myStatus.uptimeSeconds);
+		os_printf("%s: colorSingle: %ld\n", __FUNCTION__, myStatus.colorSingle);
+		os_printf("%s: colorFade1: %ld\n", __FUNCTION__, myStatus.colorFade1);
+		os_printf("%s: colorFade2: %ld\n", __FUNCTION__, myStatus.colorFade2);
+
+		setMode(myStatus.ledMode);
+	}
+}
+
+void saveStatus(void) {
+	SpiFlashOpResult result = spi_flash_erase_sector(CONFIG_SECTOR);
+	os_printf("%s: Erase result - %d\n", __FUNCTION__, result);
+	if(result == SPI_FLASH_RESULT_OK) {
+		result = spi_flash_write(CONFIG_ADDRESS, (uint32 *)&myStatus, sizeof(myStatus));
+		os_printf("%s: Write result - %d\n", __FUNCTION__, result);
+	}
 }
