@@ -112,6 +112,9 @@ void timerFunctionLEDMode(void *arg) {
 		case RGBFADE:
 			ledShowRGBFade();
 			break;
+		case COLORFADE2:
+			ledShowRGBFade2();
+			break;
 		default:
 			ledShow(0);
 			break;
@@ -127,7 +130,7 @@ void timerInit(void) {
 	// update LEDs based on mode
 	os_timer_disarm(&timerLEDMode);
 	os_timer_setfn(&timerLEDMode, (os_timer_func_t *)timerFunctionLEDMode, NULL);
-	os_timer_arm(&timerLEDMode, 1000, 1);
+	os_timer_arm(&timerLEDMode, 100, 1);
 
 	// update status and send Zabbix data
 	os_timer_disarm(&timerZabbix);

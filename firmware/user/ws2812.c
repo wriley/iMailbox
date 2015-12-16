@@ -13,7 +13,10 @@
 #define RES 6000    // Width of the low gap between bits to cause a frame to latch
 //#define GPIO_OUTPUT_SET(gpio_no, bit_value) gpio_output_set(bit_value<<gpio_no, ((~bit_value)&0x01)<<gpio_no, 1<<gpio_no,0)
 
-uint32_t currentColor = 0;
+uint32_t currentColorSingle = 0;
+uint32_t currentColorFade1 = 0;
+uint32_t currentColorFade2 = 0;
+uint8_t colorFade2State = 0;
 uint8_t currentWheelPosition = 85; //start green
 
 void  send_ws_0()
@@ -129,4 +132,8 @@ void ledShowRGBFade(void) {
 	}
 	uint32_t newColor = Wheel(currentWheelPosition++);
 	ledShow(newColor);
+}
+
+void ledShowRGBFade2(void) {
+	// TODO
 }
