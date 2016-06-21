@@ -211,3 +211,40 @@ int ICACHE_FLASH_ATTR cgiLEDMode(HttpdConnData *connData) {
 	httpdRedirect(connData, "index.tpl");
 	return HTTPD_CGI_DONE;
 }
+
+void ICACHE_FLASH_ATTR tplSetLightThreshold(HttpdConnData *connData, char *token, void **arg) {
+	char buff[128];
+	if (token==NULL) return;
+
+	uint16_t currentLightThreshold = getLightThreshold();
+
+	if (os_strcmp(token, "currentLightThreshold")==0) {
+		os_sprintf((char *)&buff, "%d", currentLightThreshold);
+	}
+	httpdSend(connData, buff, -1);
+}
+
+int ICACHE_FLASH_ATTR cgiSetLightThreshold(HttpdConnData *connData) {
+	int len;
+	char buff[1024];
+	uint16_t lightThreshold;
+
+	if (connData->conn==NULL) {
+		//Connection aborted. Clean up.
+		return HTTPD_CGI_DONE;
+	}
+
+	os_printf("%s: %s\n", __FUNCTION__, buff);
+
+	len=httpdFindArg(connData->postBuff, "lightThreshold", buff, sizeof(buff));
+	if (len!=0) {
+		lightThreshold = atoi(buff);
+	}
+
+	os_printf("%s: %d\n", __FUNCTION__, lightThreshold);
+
+	setLightThreshold(lightThreshold);
+
+	httpdRedirect(connData, "/admin/setlightthreshold.tpl");
+	return HTTPD_CGI_DONE;
+}

@@ -72,6 +72,15 @@ void setColorSingle(uint32_t c) {
 	saveStatus();
 }
 
+uint16_t getLightThreshold(void) {
+	return myStatus.lightThreshold;
+}
+
+void setLightThreshold(uint16_t t) {
+	myStatus.lightThreshold = t;
+	saveStatus();
+}
+
 void loadStatus(void) {
 	uint32_t oldUptime = myStatus.uptimeSeconds;
 
@@ -91,6 +100,10 @@ void loadStatus(void) {
 
 		setMode(myStatus.ledMode);
 		myStatus.uptimeSeconds = oldUptime;
+		if(myStatus.lightThreshold == 65535) {
+			os_printf("%s: lightThreshold not set so using default\n", __FUNCTION__);
+			myStatus.lightThreshold = 600;
+		}
 	}
 }
 

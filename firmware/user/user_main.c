@@ -81,6 +81,8 @@ HttpdBuiltInUrl builtInUrls[]={
 	{"/admin/setcolor.cgi", cgiSetColor, NULL},
 	{"/admin/led.tpl", cgiEspFsTemplate, tplLed},
 	{"/admin/led.cgi", cgiLed, NULL},
+	{"/admin/setlightthreshold.tpl", cgiEspFsTemplate, tplSetLightThreshold},
+	{"/admin/setlightthreshold.cgi", cgiSetLightThreshold, NULL},
 	{"/admin/flash.bin", cgiReadFlash, NULL},
 
 	{"*", cgiEspFsHook, NULL}, //Catch-all cgi function for the filesystem
