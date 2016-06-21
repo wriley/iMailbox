@@ -3,4 +3,7 @@
 
 #include "ets_sys.h"
 
+void showColorSingle(uint32_t);
+void showColorWheel(void);
+
 #endif

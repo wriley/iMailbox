@@ -107,14 +107,22 @@ void timerFunctionLEDMode(void *arg) {
 
 	switch(mode) {
 		case SINGLECOLOR:
+			showColorSingle(getColorSingle());
 			break;
 		case RGBFADE:
+			showColorWheel();
 			break;
 		case COLORFADE1:
+			// TODO
+			showColorSingle(0);
 			break;
 		case COLORFADE2:
+			// TODO
+			showColorSingle(0);
 			break;
 		default:
+			// Turn off
+			showColorSingle(0);
 			break;
 	}
 }

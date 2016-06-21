@@ -78,19 +78,6 @@ void sendPixel( uint8_t r, uint8_t g , uint8_t b )  {
 
 }
 
-void show() {
-	//os_printf("%s\n", __FUNCTION__);
-	GPIO_OUTPUT_SET(GPIO_ID_PIN(WSGPIO), 0);
-	cli();
-	for(int i = 0; i < WSPIXELS; i++) {
-		uint8_t rgb[3];
-		colorToRGB(rgb, pixels[i]);
-		sendPixel(rgb[0], rgb[1], rgb[2]);
-	}
-	sei();
-	ets_delay_us( (RES / 1000UL) + 1);
-}
-
 uint32_t rgbToColor(uint8_t r, uint8_t g, uint8_t b) {
 	return ((r & 0xff) << 16) + ((g & 0xff) << 8) + (b & 0xff);
 }
@@ -116,4 +103,28 @@ uint32_t Wheel(uint8_t WheelPos) {
 
 void setBrightness(uint8_t b) {
 
+}
+
+void show() {
+	//os_printf("%s\n", __FUNCTION__);
+	GPIO_OUTPUT_SET(GPIO_ID_PIN(WSGPIO), 0);
+	cli();
+	for(int i = 0; i < WSPIXELS; i++) {
+		uint8_t rgb[3];
+		colorToRGB(rgb, pixels[i]);
+		sendPixel(rgb[0], rgb[1], rgb[2]);
+	}
+	sei();
+	ets_delay_us( (RES / 1000UL) + 1);
+}
+
+void showColorSingle(uint32_t c) {
+	for(int i = 0; i < WSPIXELS; i++) {
+		pixels[i] = c;
+	}
+	show();
+}
+
+void showColorWheel() {
+	showColorSingle(Wheel(currentWheelPosition++));
 }
