@@ -105,27 +105,32 @@ void timerFunctionZabbix(void *arg) {
 }
 
 void timerFunctionLEDMode(void *arg) {
-	char mode = getMode();
+	uint16_t lightReading = getLightReading();
+	uint16_t lightThreshold = getLightThreshold();
 
-	switch(mode) {
-		case SINGLECOLOR:
-			showColorSingle(getColorSingle());
-			break;
-		case RGBFADE:
-			showColorWheel();
-			break;
-		case COLORFADE1:
-			// TODO
-			showColorSingle(0);
-			break;
-		case COLORFADE2:
-			// TODO
-			showColorSingle(0);
-			break;
-		default:
-			// Turn off
-			showColorSingle(0);
-			break;
+	if(lightReading < lightThreshold) {
+		char mode = getMode();
+
+		switch(mode) {
+			case SINGLECOLOR:
+				showColorSingle(getColorSingle());
+				break;
+			case RGBFADE:
+				showColorWheel();
+				break;
+			case COLORFADE1:
+				// TODO
+				showColorSingle(0);
+				break;
+			case COLORFADE2:
+				// TODO
+				showColorSingle(0);
+				break;
+			default:
+				// Turn off
+				showColorSingle(0);
+				break;
+		}
 	}
 }
 

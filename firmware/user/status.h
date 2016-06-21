@@ -40,6 +40,7 @@ uint32_t getColorSingle(void);
 void setColorSingle(uint32_t);
 uint16_t getLightThreshold(void);
 void setLightThreshold(uint16_t);
+uint16_t getLightReading(void);
 void loadStatus(void);
 void saveStatus(void);
 

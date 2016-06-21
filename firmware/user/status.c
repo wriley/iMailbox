@@ -81,6 +81,10 @@ void setLightThreshold(uint16_t t) {
 	saveStatus();
 }
 
+uint16_t getLightReading(void) {
+	return myStatus.lightReading;
+}
+
 void loadStatus(void) {
 	uint32_t oldUptime = myStatus.uptimeSeconds;
 
