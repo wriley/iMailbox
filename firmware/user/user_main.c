@@ -1,5 +1,3 @@
-
-
 /*
  * ----------------------------------------------------------------------------
  * "THE BEER-WARE LICENSE" (Revision 42):
@@ -9,23 +7,28 @@
  * ----------------------------------------------------------------------------
  */
 
+/*
+This is example code for the esphttpd library. It's a small-ish demo showing off 
+the server, including WiFi connection management capabilities, some IO and
+some pictures of cats.
+*/
 
-#include "espmissingincludes.h"
-#include "ets_sys.h"
-#include "osapi.h"
-#include "os_type.h"
+#include <esp8266.h>
 #include "httpd.h"
 #include "io.h"
 #include "httpdespfs.h"
 #include "cgi.h"
 #include "cgiwifi.h"
+#include "cgiflash.h"
 #include "stdout.h"
 #include "auth.h"
-#include "wifi.h"
-#include "status.h"
-#include "ws2812.h"
-#include "zabbix.h"
+#include "espfs.h"
+#include "captdns.h"
+#include "webpages-espfs.h"
+#include "cgiwebsocket.h"
 
+//The example can print out the heap use every 3 seconds. You can use this to catch memory leaks.
+//#define SHOW_HEAP_USE
 
 //Function that tells the authentication system what users/passwords live on the system.
 //This is disabled in the default build; if you want to try it, enable the authBasic line in
@@ -44,6 +47,65 @@ int myPassFn(HttpdConnData *connData, int no, char *user, int userLen, char *pas
 	return 0;
 }
 
+static ETSTimer websockTimer;
+
+//Broadcast the uptime in seconds every second over connected websockets
+static void ICACHE_FLASH_ATTR websockTimerCb(void *arg) {
+	static int ctr=0;
+	char buff[128];
+	ctr++;
+	os_sprintf(buff, "Up for %d minutes %d seconds!\n", ctr/60, ctr%60);
+	cgiWebsockBroadcast("/websocket/ws.cgi", buff, os_strlen(buff), WEBSOCK_FLAG_NONE);
+}
+
+//On reception of a message, send "You sent: " plus whatever the other side sent
+void myWebsocketRecv(Websock *ws, char *data, int len, int flags) {
+	int i;
+	char buff[128];
+	os_sprintf(buff, "You sent: ");
+	for (i=0; i<len; i++) buff[i+10]=data[i];
+	buff[i+10]=0;
+	cgiWebsocketSend(ws, buff, os_strlen(buff), WEBSOCK_FLAG_NONE);
+}
+
+//Websocket connected. Install reception handler and send welcome message.
+void myWebsocketConnect(Websock *ws) {
+	ws->recvCb=myWebsocketRecv;
+	cgiWebsocketSend(ws, "Hi, Websocket!", 14, WEBSOCK_FLAG_NONE);
+}
+
+//On reception of a message, echo it back verbatim
+void myEchoWebsocketRecv(Websock *ws, char *data, int len, int flags) {
+	os_printf("EchoWs: echo, len=%d\n", len);
+	cgiWebsocketSend(ws, data, len, flags);
+}
+
+//Echo websocket connected. Install reception handler.
+void myEchoWebsocketConnect(Websock *ws) {
+	os_printf("EchoWs: connect\n");
+	ws->recvCb=myEchoWebsocketRecv;
+}
+
+
+#ifdef ESPFS_POS
+CgiUploadFlashDef uploadParams={
+	.type=CGIFLASH_TYPE_ESPFS,
+	.fw1Pos=ESPFS_POS,
+	.fw2Pos=0,
+	.fwSize=ESPFS_SIZE,
+};
+#define INCLUDE_FLASH_FNS
+#endif
+#ifdef OTA_FLASH_SIZE_K
+CgiUploadFlashDef uploadParams={
+	.type=CGIFLASH_TYPE_FW,
+	.fw1Pos=0x1000,
+	.fw2Pos=((OTA_FLASH_SIZE_K*1024)/2)+0x1000,
+	.fwSize=((OTA_FLASH_SIZE_K*1024)/2)-0x1000,
+	.tagName=OTA_TAGNAME
+};
+#define INCLUDE_FLASH_FNS
+#endif
 
 /*
 This is the main url->function dispatching data struct.
@@ -56,109 +118,73 @@ general ones. Authorization things (like authBasic) act as a 'barrier' and
 should be placed above the URLs they protect.
 */
 HttpdBuiltInUrl builtInUrls[]={
+	{"*", cgiRedirectApClientToHostname, "esp8266.nonet"},
 	{"/", cgiRedirect, "/index.tpl"},
-	{"/index.tpl", cgiEspFsTemplate, tplIndex},
-	{"/status.cgi", cgiStatus, NULL},
+	{"/flash.bin", cgiReadFlash, NULL},
+	{"/led.tpl", cgiEspFsTemplate, tplLed},
+	{"/index.tpl", cgiEspFsTemplate, tplCounter},
+	{"/led.cgi", cgiLed, NULL},
+	{"/flash/download", cgiReadFlash, NULL},
+#ifdef INCLUDE_FLASH_FNS
+	{"/flash/next", cgiGetFirmwareNext, &uploadParams},
+	{"/flash/upload", cgiUploadFirmware, &uploadParams},
+#endif
+	{"/flash/reboot", cgiRebootFirmware, NULL},
 
 	//Routines to make the /wifi URL and everything beneath it work.
 
 //Enable the line below to protect the WiFi configuration with an username/password combo.
-	//{"/wifi/*", authBasic, myPassFn},
-	//{"/admin/*", authBasic, myPassFn},
+//	{"/wifi/*", authBasic, myPassFn},
 
 	{"/wifi", cgiRedirect, "/wifi/wifi.tpl"},
 	{"/wifi/", cgiRedirect, "/wifi/wifi.tpl"},
 	{"/wifi/wifiscan.cgi", cgiWiFiScan, NULL},
 	{"/wifi/wifi.tpl", cgiEspFsTemplate, tplWlan},
 	{"/wifi/connect.cgi", cgiWiFiConnect, NULL},
-	{"/wifi/setmode.cgi", cgiWifiSetMode, NULL},
+	{"/wifi/connstatus.cgi", cgiWiFiConnStatus, NULL},
+	{"/wifi/setmode.cgi", cgiWiFiSetMode, NULL},
 
-	{"/admin", cgiRedirect, "/admin/index.tpl"},
-	{"/admin/", cgiRedirect, "/admin/index.tpl"},
-	{"/admin/index.tpl", cgiEspFsTemplate, tplAdminIndex},
-	{"/admin/ledmode.cgi", cgiLEDMode, NULL},
-	{"/admin/setcolor.tpl", cgiEspFsTemplate, tplSetColor},
-	{"/admin/setcolor.cgi", cgiSetColor, NULL},
-	{"/admin/led.tpl", cgiEspFsTemplate, tplLed},
-	{"/admin/led.cgi", cgiLed, NULL},
-	{"/admin/setlightthreshold.tpl", cgiEspFsTemplate, tplSetLightThreshold},
-	{"/admin/setlightthreshold.cgi", cgiSetLightThreshold, NULL},
-	{"/admin/flash.bin", cgiReadFlash, NULL},
+	{"/websocket/ws.cgi", cgiWebsocket, myWebsocketConnect},
+	{"/websocket/echo.cgi", cgiWebsocket, myEchoWebsocketConnect},
 
 	{"*", cgiEspFsHook, NULL}, //Catch-all cgi function for the filesystem
 	{NULL, NULL, NULL}
 };
 
-// timers
-static os_timer_t timerUptime;
-static os_timer_t timerZabbix;
-static os_timer_t timerLEDMode;
 
-void timerFunctionUptime(void *arg)
-{
-	incrementUptimeSeconds();
+#ifdef SHOW_HEAP_USE
+static ETSTimer prHeapTimer;
+
+static void ICACHE_FLASH_ATTR prHeapTimerCb(void *arg) {
+	os_printf("Heap: %ld\n", (unsigned long)system_get_free_heap_size());
 }
+#endif
 
-void timerFunctionZabbix(void *arg) {
-	updateStatus();
-	sendToZabbix();
-}
-
-void timerFunctionLEDMode(void *arg) {
-	uint16_t lightReading = getLightReading();
-	uint16_t lightThreshold = getLightThreshold();
-
-	if(lightReading < lightThreshold) {
-		char mode = getMode();
-
-		switch(mode) {
-			case SINGLECOLOR:
-				showColorSingle(getColorSingle());
-				break;
-			case RGBFADE:
-				showColorWheel();
-				break;
-			case COLORFADE1:
-				// TODO
-				showColorSingle(0);
-				break;
-			case COLORFADE2:
-				// TODO
-				showColorSingle(0);
-				break;
-			default:
-				// Turn off
-				showColorSingle(0);
-				break;
-		}
-	}
-}
-
-void timerInit(void) {
-	// increment uptime
-	os_timer_disarm(&timerUptime);
-	os_timer_setfn(&timerUptime, (os_timer_func_t *)timerFunctionUptime, NULL);
-	os_timer_arm(&timerUptime, 1000, 1);
-
-	// update LEDs based on mode
-	os_timer_disarm(&timerLEDMode);
-	os_timer_setfn(&timerLEDMode, (os_timer_func_t *)timerFunctionLEDMode, NULL);
-	os_timer_arm(&timerLEDMode, 100, 1);
-
-	// update status and send Zabbix data
-	os_timer_disarm(&timerZabbix);
-	os_timer_setfn(&timerZabbix, (os_timer_func_t *)timerFunctionZabbix, NULL);
-	os_timer_arm(&timerZabbix, 60000, 1);
-}
-
-//Main routine. Initialize stdout, the I/O and the webserver and we're done.
+//Main routine. Initialize stdout, the I/O, filesystem and the webserver and we're done.
 void user_init(void) {
 	stdoutInit();
 	ioInit();
-	loadStatus();
-	updateStatus();
-	wifiInit();
+	captdnsInit();
+
+	// 0x40200000 is the base address for spi flash memory mapping, ESPFS_POS is the position
+	// where image is written in flash that is defined in Makefile.
+#ifdef ESPFS_POS
+	espFsInit((void*)(0x40200000 + ESPFS_POS));
+#else
+	espFsInit((void*)(webpages_espfs_start));
+#endif
 	httpdInit(builtInUrls, 80);
-	timerInit();
-	os_printf("\nReady\nfreeHeap: %d\n", system_get_free_heap_size());
+#ifdef SHOW_HEAP_USE
+	os_timer_disarm(&prHeapTimer);
+	os_timer_setfn(&prHeapTimer, prHeapTimerCb, NULL);
+	os_timer_arm(&prHeapTimer, 3000, 1);
+#endif
+	os_timer_disarm(&websockTimer);
+	os_timer_setfn(&websockTimer, websockTimerCb, NULL);
+	os_timer_arm(&websockTimer, 1000, 1);
+	os_printf("\nReady\n");
+}
+
+void user_rf_pre_init() {
+	//Not needed, but some SDK versions want this defined.
 }
