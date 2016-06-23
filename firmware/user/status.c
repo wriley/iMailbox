@@ -85,6 +85,14 @@ uint16_t getLightReading(void) {
 	return myStatus.lightReading;
 }
 
+void setLedShow(uint8_t s) {
+	myStatus.ledShow = s;
+}
+
+uint8_t getLedShow(void) {
+	return myStatus.ledShow;
+}
+
 void loadStatus(void) {
 	uint32_t oldUptime = myStatus.uptimeSeconds;
 
@@ -107,6 +115,14 @@ void loadStatus(void) {
 		if(myStatus.lightThreshold == 65535) {
 			os_printf("%s: lightThreshold not set so using default\n", __FUNCTION__);
 			myStatus.lightThreshold = 600;
+		}
+		if(myStatus.ledMode < 0 || myStatus.ledMode > 4) {
+			os_printf("%s: ledMode not set so using default\n", __FUNCTION__);
+			myStatus.ledMode = 0;
+		}
+		if(myStatus.ledShow < 0 || myStatus.ledShow > 1) {
+			os_printf("%s: ledShow not set so using default\n", __FUNCTION__);
+			myStatus.ledShow = 0;
 		}
 	}
 }

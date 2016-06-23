@@ -81,6 +81,8 @@ HttpdBuiltInUrl builtInUrls[]={
 	{"/admin/setcolor.cgi", cgiSetColor, NULL},
 	{"/admin/led.tpl", cgiEspFsTemplate, tplLed},
 	{"/admin/led.cgi", cgiLed, NULL},
+	{"/admin/setledshow.tpl", cgiEspFsTemplate, tplLedShow},
+	{"/admin/setledshow.cgi", cgiLedShow, NULL},
 	{"/admin/setlightthreshold.tpl", cgiEspFsTemplate, tplSetLightThreshold},
 	{"/admin/setlightthreshold.cgi", cgiSetLightThreshold, NULL},
 	{"/admin/flash.bin", cgiReadFlash, NULL},
@@ -107,8 +109,9 @@ void timerFunctionZabbix(void *arg) {
 void timerFunctionLEDMode(void *arg) {
 	uint16_t lightReading = getLightReading();
 	uint16_t lightThreshold = getLightThreshold();
+	uint8_t ledShow = getLedShow();
 
-	if(lightReading < lightThreshold) {
+	if((lightReading < lightThreshold) || (ledShow == 1)) {
 		char mode = getMode();
 
 		switch(mode) {

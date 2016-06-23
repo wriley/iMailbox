@@ -43,5 +43,7 @@ void setLightThreshold(uint16_t);
 uint16_t getLightReading(void);
 void loadStatus(void);
 void saveStatus(void);
+uint8_t getLedShow(void);
+void setLedShow(uint8_t);
 
 #endif /* USER_STATUS_H_ */

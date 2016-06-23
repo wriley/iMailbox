@@ -14,5 +14,7 @@ int cgiSetColor(HttpdConnData *connData);
 int cgiSetLightThreshold(HttpdConnData *connData);
 void tplAdminIndex(HttpdConnData *connData, char *token, void **arg);
 int cgiLEDMode(HttpdConnData *connData);
+int cgiLedShow(HttpdConnData *connData);
+void tplLedShow(HttpdConnData *connData, char *token, void **arg);
 
 #endif

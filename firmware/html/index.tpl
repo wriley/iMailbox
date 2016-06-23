@@ -12,12 +12,22 @@ function updateInfo() {
 	xhr.onreadystatechange=function() {
 		if (xhr.readyState==4 && xhr.status>=200 && xhr.status<300) {
 			var data=JSON.parse(xhr.responseText);
+			
 			var statusDiv=document.getElementById("uptimeSeconds");
 			statusDiv.innerHTML=secondsToDateString(data.result.uptimeSeconds);
+			
 			var statusDiv=document.getElementById("ledMode");
 			statusDiv.innerHTML=ledModeArray[data.result.ledMode];
+			
+			var statusDiv=document.getElementById("ledShow");
+			statusDiv.innerHTML=data.result.ledShow;
+			
 			var statusDiv=document.getElementById("lightReading");
 			statusDiv.innerHTML=data.result.lightReading;
+			
+			var statusDiv=document.getElementById("lightThreshold");
+			statusDiv.innerHTML=data.result.lightThreshold;
+			
 			var statusDiv=document.getElementById("batteryStatus");
 			if(data.result.batteryStatus == 1 || data.result.batteryStatus == 7) {
 				statusDiv.innerHTML="<font class=\"error\">"+batteryStatusArray[data.result.batteryStatus]+"</font>";
@@ -63,7 +73,9 @@ window.onload=function(e) {
 <p>
 <strong>Uptime:</strong> <span id="uptimeSeconds">--</span><br>
 <strong>LED Mode:</strong> <span id="ledMode">--</span><br>
+<strong>LED Show:</strong> <span id="ledShow">--</span><br>
 <strong>Light Reading:</strong> <span id="lightReading">--</span><br>
+<strong>Light Threshold:</strong> <span id="lightThreshold">--</span><br>
 <strong>Battery Status:</strong> <span id="batteryStatus">--</span><br> 
 </p>
 <div style="text-align: right;">

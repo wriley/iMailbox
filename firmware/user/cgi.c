@@ -39,6 +39,7 @@ void ICACHE_FLASH_ATTR tplIndex(HttpdConnData *connData, char *token, void **arg
 }
 
 static char currLedState=1;
+static char currLedShow=0;
 
 //Cgi that turns the LED on or off according to the 'led' param in the POST data
 int ICACHE_FLASH_ATTR cgiLed(HttpdConnData *connData) {
@@ -247,4 +248,38 @@ int ICACHE_FLASH_ATTR cgiSetLightThreshold(HttpdConnData *connData) {
 
 	httpdRedirect(connData, "/admin/setlightthreshold.tpl");
 	return HTTPD_CGI_DONE;
+}
+
+int ICACHE_FLASH_ATTR cgiLedShow(HttpdConnData *connData) {
+	int len;
+	char buff[1024];
+
+	if (connData->conn==NULL) {
+		//Connection aborted. Clean up.
+		return HTTPD_CGI_DONE;
+	}
+
+	len=httpdFindArg(connData->postBuff, "ledShow", buff, sizeof(buff));
+	if (len!=0) {
+		currLedShow=atoi(buff);
+		setLedShow(currLedShow);
+	}
+
+	httpdRedirect(connData, "setledshow.tpl");
+	return HTTPD_CGI_DONE;
+}
+
+void ICACHE_FLASH_ATTR tplLedShow(HttpdConnData *connData, char *token, void **arg) {
+	char buff[128];
+	if (token==NULL) return;
+
+	os_strcpy(buff, "Unknown");
+	if (os_strcmp(token, "ledShow")==0) {
+		if (currLedShow) {
+			os_strcpy(buff, "on");
+		} else {
+			os_strcpy(buff, "off");
+		}
+	}
+	httpdSend(connData, buff, -1);
 }
