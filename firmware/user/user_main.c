@@ -26,6 +26,9 @@ some pictures of cats.
 #include "captdns.h"
 #include "webpages-espfs.h"
 #include "cgiwebsocket.h"
+#include "status.h"
+#include "ws2812.h"
+#include "zabbix.h"
 
 //The example can print out the heap use every 3 seconds. You can use this to catch memory leaks.
 //#define SHOW_HEAP_USE
@@ -120,11 +123,8 @@ should be placed above the URLs they protect.
 HttpdBuiltInUrl builtInUrls[]={
 	{"*", cgiRedirectApClientToHostname, "esp8266.nonet"},
 	{"/", cgiRedirect, "/index.tpl"},
-	{"/flash.bin", cgiReadFlash, NULL},
-	{"/led.tpl", cgiEspFsTemplate, tplLed},
-	{"/index.tpl", cgiEspFsTemplate, tplCounter},
-	{"/led.cgi", cgiLed, NULL},
-	{"/flash/download", cgiReadFlash, NULL},
+	{"/index.tpl", cgiEspFsTemplate, tplIndex},
+	{"/status.cgi", cgiStatus, NULL},
 #ifdef INCLUDE_FLASH_FNS
 	{"/flash/next", cgiGetFirmwareNext, &uploadParams},
 	{"/flash/upload", cgiUploadFirmware, &uploadParams},
@@ -147,6 +147,18 @@ HttpdBuiltInUrl builtInUrls[]={
 	{"/websocket/ws.cgi", cgiWebsocket, myWebsocketConnect},
 	{"/websocket/echo.cgi", cgiWebsocket, myEchoWebsocketConnect},
 
+	{"/admin", cgiRedirect, "/admin/index.tpl"},
+	{"/admin/", cgiRedirect, "/admin/index.tpl"},
+	{"/admin/index.tpl", cgiEspFsTemplate, tplAdminIndex},
+	{"/admin/ledmode.cgi", cgiLEDMode, NULL},
+	{"/admin/setcolor.tpl", cgiEspFsTemplate, tplSetColor},
+	{"/admin/setcolor.cgi", cgiSetColor, NULL},
+	{"/admin/led.tpl", cgiEspFsTemplate, tplLed},
+	{"/admin/led.cgi", cgiLed, NULL},
+	{"/admin/setlightthreshold.tpl", cgiEspFsTemplate, tplSetLightThreshold},
+	{"/admin/setlightthreshold.cgi", cgiSetLightThreshold, NULL},
+	{"/admin/flash.bin", cgiReadFlash, NULL},
+
 	{"*", cgiEspFsHook, NULL}, //Catch-all cgi function for the filesystem
 	{NULL, NULL, NULL}
 };
@@ -159,6 +171,68 @@ static void ICACHE_FLASH_ATTR prHeapTimerCb(void *arg) {
 	os_printf("Heap: %ld\n", (unsigned long)system_get_free_heap_size());
 }
 #endif
+
+// timers
+static os_timer_t timerUptime;
+static os_timer_t timerZabbix;
+static os_timer_t timerLEDMode;
+
+void timerFunctionUptime(void *arg)
+{
+	incrementUptimeSeconds();
+}
+
+void timerFunctionZabbix(void *arg) {
+	updateStatus();
+	sendToZabbix();
+}
+
+void timerFunctionLEDMode(void *arg) {
+	uint16_t lightReading = getLightReading();
+	uint16_t lightThreshold = getLightThreshold();
+
+	if(lightReading < lightThreshold) {
+		char mode = getMode();
+
+		switch(mode) {
+			case SINGLECOLOR:
+				showColorSingle(getColorSingle());
+				break;
+			case RGBFADE:
+				showColorWheel();
+				break;
+			case COLORFADE1:
+				// TODO
+				showColorSingle(0);
+				break;
+			case COLORFADE2:
+				// TODO
+				showColorSingle(0);
+				break;
+			default:
+				// Turn off
+				showColorSingle(0);
+				break;
+		}
+	}
+}
+
+void timerInit(void) {
+	// increment uptime
+	os_timer_disarm(&timerUptime);
+	os_timer_setfn(&timerUptime, (os_timer_func_t *)timerFunctionUptime, NULL);
+	os_timer_arm(&timerUptime, 1000, 1);
+
+	// update LEDs based on mode
+	os_timer_disarm(&timerLEDMode);
+	os_timer_setfn(&timerLEDMode, (os_timer_func_t *)timerFunctionLEDMode, NULL);
+	os_timer_arm(&timerLEDMode, 100, 1);
+
+	// update status and send Zabbix data
+	os_timer_disarm(&timerZabbix);
+	os_timer_setfn(&timerZabbix, (os_timer_func_t *)timerFunctionZabbix, NULL);
+	os_timer_arm(&timerZabbix, 60000, 1);
+}
 
 //Main routine. Initialize stdout, the I/O, filesystem and the webserver and we're done.
 void user_init(void) {
@@ -182,7 +256,8 @@ void user_init(void) {
 	os_timer_disarm(&websockTimer);
 	os_timer_setfn(&websockTimer, websockTimerCb, NULL);
 	os_timer_arm(&websockTimer, 1000, 1);
-	os_printf("\nReady\n");
+	timerInit();
+	os_printf("\nReady\nfreeHeap: %d\n", system_get_free_heap_size());
 }
 
 void user_rf_pre_init() {

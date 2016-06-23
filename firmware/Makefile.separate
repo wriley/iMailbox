@@ -33,5 +33,5 @@ blankflash:
 	$(Q) $(ESPTOOL) $(ESPTOOL_OPTS) write_flash  $(ESPTOOL_FLASHDEF) $(BLANKPOS) $(SDK_BASE)/bin/blank.bin $(INITDATAPOS) $(SDK_BASE)/bin/esp_init_data_default.bin
 
 htmlflash: libesphttpd
-	$(Q) if [ $$(stat -c '%s' libesphttpd/webpages.espfs) -gt $$(( $(ESPFS_SIZE) )) ]; then echo "webpages.espfs too big!"; false; fi
+	$(Q) if [ $$(c://gnuwin32//bin//stat.exe -c '%s' libesphttpd/webpages.espfs) -gt $$(( $(ESPFS_SIZE) )) ]; then echo "webpages.espfs too big!"; false; fi
 	$(Q) $(ESPTOOL) $(ESPTOOL_OPTS) write_flash  $(ESPTOOL_FLASHDEF) $(ESPFS_POS) libesphttpd/webpages.espfs
