@@ -11,6 +11,21 @@
 
 #include <esp8266.h>
 
+// from esp8266 Arduino source
+/*-----------------------------------------*/
+#define PERIPHS_GPIO_BASEADDR	0x60000300
+
+#define GPIO_OUT			(PERIPHS_GPIO_BASEADDR + 0x00)
+#define GPIO_OUT_W1TS		(PERIPHS_GPIO_BASEADDR + 0x04)
+#define GPIO_OUT_W1TC		(PERIPHS_GPIO_BASEADDR + 0x08)
+
+#define GPIO_ENABLE			(PERIPHS_GPIO_BASEADDR + 0x0C)
+#define GPIO_ENABLE_W1TS	(PERIPHS_GPIO_BASEADDR + 0x10)
+#define GPIO_ENABLE_W1TC	(PERIPHS_GPIO_BASEADDR + 0x14)
+
+#define GPIO_IN				(PERIPHS_GPIO_BASEADDR + 0x18)
+/*-----------------------------------------*/
+
 #define LEDGPIO 2
 #define BTNGPIO 0
 
@@ -49,3 +64,20 @@ void ioInit() {
 	os_timer_arm(&resetBtntimer, 500, 1);
 }
 
+// based on esp8266 Arduino source
+uint8 digitalRead(uint8 pin) {
+	if (READ_PERI_REG(GPIO_ENABLE) & ((uint32) 0x1 << pin))
+		{
+			return !!((READ_PERI_REG(GPIO_OUT) & ((uint32) 0x1 << pin)));
+		}
+		else
+		{
+			return !!((READ_PERI_REG(GPIO_IN) & ((uint32) 0x1 << pin)));
+		}
+}
+
+// based on esp8266 Arduino source
+void digitalWrite(uint8 pin, uint8 value)
+{
+		WRITE_PERI_REG(GPIO_OUT, (READ_PERI_REG(GPIO_OUT) & (uint32) (~(0x01 << pin))) | (value << pin));
+}

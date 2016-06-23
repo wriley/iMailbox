@@ -40,7 +40,7 @@ USE_OPENSDK?=no
 
 #Esptool.py path and port
 ESPTOOL ?= $(SDK_TOOLS)/esptool.exe
-ESPPORT ?= COM3
+ESPPORT ?= COM4
 #ESPDELAY indicates seconds to wait between flashing the two binary images
 ESPDELAY	?= 3
 ESPBAUD		?= 460800
@@ -49,7 +49,7 @@ ESPBAUD		?= 460800
 APPGEN		?= $(SDK_TOOLS)/gen_appbin.exe
 
 # name for the target project
-TARGET		= httpd
+TARGET		= iMailbox
 
 # which modules (subdirectories) of the project to include in compiling
 MODULES		= user
