@@ -6,6 +6,7 @@
 var xhr=j();
 var batteryStatusArray=["On Battery","Low Battery","Unknown","Unknown","On Solar","Charging","Charge Complete","Temperature or Timer Fault"];
 var ledModeArray=["Off","Single Color","RGB Fade","Single Color Fade","2 Color Fade"];
+var ledShowArray=["Off","On"];
 
 function updateInfo() {
 	xhr.open("GET", "status.cgi");
@@ -20,7 +21,7 @@ function updateInfo() {
 			statusDiv.innerHTML=ledModeArray[data.result.ledMode];
 			
 			var statusDiv=document.getElementById("ledShow");
-			statusDiv.innerHTML=data.result.ledShow;
+			statusDiv.innerHTML=ledShowArray[data.result.ledShow];
 			
 			var statusDiv=document.getElementById("lightReading");
 			statusDiv.innerHTML=data.result.lightReading;
@@ -73,7 +74,7 @@ window.onload=function(e) {
 <p>
 <strong>Uptime:</strong> <span id="uptimeSeconds">--</span><br>
 <strong>LED Mode:</strong> <span id="ledMode">--</span><br>
-<strong>LED Show:</strong> <span id="ledShow">--</span><br>
+<strong>Light Sensor Override:</strong> <span id="ledShow">--</span><br>
 <strong>Light Reading:</strong> <span id="lightReading">--</span><br>
 <strong>Light Threshold:</strong> <span id="lightThreshold">--</span><br>
 <strong>Battery Status:</strong> <span id="batteryStatus">--</span><br> 

@@ -59,6 +59,7 @@ HttpdBuiltInUrl builtInUrls[]={
 	{"/", cgiRedirect, "/index.tpl"},
 	{"/index.tpl", cgiEspFsTemplate, tplIndex},
 	{"/status.cgi", cgiStatus, NULL},
+	{"/status", cgiStatus, NULL},
 
 	//Routines to make the /wifi URL and everything beneath it work.
 
@@ -107,11 +108,14 @@ void timerFunctionZabbix(void *arg) {
 }
 
 void timerFunctionLEDMode(void *arg) {
-	uint16_t lightReading = getLightReading();
-	uint16_t lightThreshold = getLightThreshold();
-	uint8_t ledShow = getLedShow();
+	struct iMailboxStatus currentStatus = getStatus();
 
-	if((lightReading < lightThreshold) || (ledShow == 1)) {
+	if(
+		((currentStatus.lightReading < currentStatus.lightThreshold) ||
+		(currentStatus.ledShow == 1)) &&
+		(currentStatus.batteryStatus != LOWBATTERY) &&
+		(currentStatus.batteryStatus != FAULT)
+	) {
 		char mode = getMode();
 
 		switch(mode) {
@@ -134,6 +138,9 @@ void timerFunctionLEDMode(void *arg) {
 				showColorSingle(0);
 				break;
 		}
+	} else {
+		// Turn off
+		showColorSingle(0);
 	}
 }
 

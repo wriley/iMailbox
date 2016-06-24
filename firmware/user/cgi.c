@@ -275,11 +275,7 @@ void ICACHE_FLASH_ATTR tplLedShow(HttpdConnData *connData, char *token, void **a
 
 	os_strcpy(buff, "Unknown");
 	if (os_strcmp(token, "ledShow")==0) {
-		if (currLedShow) {
-			os_strcpy(buff, "on");
-		} else {
-			os_strcpy(buff, "off");
-		}
+		os_sprintf(buff, "%d", currLedShow);
 	}
 	httpdSend(connData, buff, -1);
 }

@@ -33,7 +33,7 @@ window.onload=function(e) {
 <input type="submit" name="submit" value="Set LED Mode">
 </form>
 <a href="/admin/setcolor.tpl">Set LED Color</a><br>
-<a href="/admin/setledshow.tpl">Set LED Show</a><br>
+<a href="/admin/setledshow.tpl">Set Light Sensor Override</a><br>
 <a href="/admin/setlightthreshold.tpl">Set LightThreshold</a><br>
 </p>
 </div>
