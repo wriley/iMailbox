@@ -1,4 +1,4 @@
-<html><head><title>iMailbox - Single LED Color</title>
+<html><head><title>iMailbox - Admin - Single LED Color</title>
 <link rel="stylesheet" type="text/css" href="../style.css">
 <link rel="stylesheet" href="themes.css">
 <script type="text/javascript" src="colorpicker.min.js"></script>

@@ -16,5 +16,7 @@ void tplAdminIndex(HttpdConnData *connData, char *token, void **arg);
 int cgiLEDMode(HttpdConnData *connData);
 int cgiLedShow(HttpdConnData *connData);
 void tplLedShow(HttpdConnData *connData, char *token, void **arg);
+int cgiSetBrightness(HttpdConnData *connData);
+void tplSetBrightness(HttpdConnData *connData, char *token, void **arg);
 
 #endif

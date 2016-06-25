@@ -35,6 +35,7 @@ window.onload=function(e) {
 <a href="/admin/setcolor.tpl">Set LED Color</a><br>
 <a href="/admin/setledshow.tpl">Set Light Sensor Override</a><br>
 <a href="/admin/setlightthreshold.tpl">Set LightThreshold</a><br>
+<a href="/admin/setbrightness.tpl">Set Brightness</a><br>
 </p>
 </div>
 </body></html>

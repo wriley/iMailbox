@@ -101,17 +101,20 @@ uint32_t Wheel(uint8_t WheelPos) {
 	}
 }
 
-void setBrightness(uint8_t b) {
-
-}
-
 void show() {
 	//os_printf("%s\n", __FUNCTION__);
+	struct iMailboxStatus currentStatus = getStatus();
+	uint8_t currentBrightness = currentStatus.brightness;
 	GPIO_OUTPUT_SET(GPIO_ID_PIN(WSGPIO), 0);
 	cli();
 	for(int i = 0; i < WSPIXELS; i++) {
-		uint8_t rgb[3];
+		uint8_t rgb[4];
 		colorToRGB(rgb, pixels[i]);
+		if(currentBrightness) {
+			rgb[0] = (rgb[0] * currentBrightness) >> 8;
+			rgb[1] = (rgb[1] * currentBrightness) >> 8;
+			rgb[2] = (rgb[2] * currentBrightness) >> 8;
+		}
 		sendPixel(rgb[0], rgb[1], rgb[2]);
 	}
 	sei();

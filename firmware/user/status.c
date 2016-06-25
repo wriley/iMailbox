@@ -102,6 +102,7 @@ void loadStatus(void) {
 	if(result == SPI_FLASH_RESULT_OK) {
 		os_printf("%s: ledMode: %d\n", __FUNCTION__, myStatus.ledMode);
 		os_printf("%s: ledShow: %d\n", __FUNCTION__, myStatus.ledShow);
+		os_printf("%s: brightness: %d\n", __FUNCTION__, myStatus.brightness);
 		os_printf("%s: lightReading: %d\n", __FUNCTION__, myStatus.lightReading);
 		os_printf("%s: lightThreshold: %d\n", __FUNCTION__, myStatus.lightThreshold);
 		os_printf("%s: batteryStatus: %d\n", __FUNCTION__, myStatus.batteryStatus);
@@ -134,4 +135,12 @@ void saveStatus(void) {
 		result = spi_flash_write(CONFIG_ADDRESS, (uint32 *)&myStatus, sizeof(myStatus));
 		os_printf("%s: Write result - %d\n", __FUNCTION__, result);
 	}
+}
+
+uint8_t getBrightness(void) {
+	return myStatus.brightness;
+}
+
+void setBrightness(uint8_t b) {
+	myStatus.brightness = b;
 }

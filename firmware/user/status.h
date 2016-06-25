@@ -11,7 +11,7 @@ struct __attribute__((aligned(4))) iMailboxStatus {
 	uint8_t ledMode;
 	uint8_t ledShow;
 	uint8_t batteryStatus;
-	uint8_t padding;
+	uint8_t brightness;
 };
 
 typedef enum {
@@ -45,5 +45,7 @@ void loadStatus(void);
 void saveStatus(void);
 uint8_t getLedShow(void);
 void setLedShow(uint8_t);
+uint8_t getBrightness(void);
+void setBrightness(uint8_t);
 
 #endif /* USER_STATUS_H_ */

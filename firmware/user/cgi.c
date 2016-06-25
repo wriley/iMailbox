@@ -112,6 +112,7 @@ int ICACHE_FLASH_ATTR cgiStatus(HttpdConnData *connData) {
 	len=os_sprintf(buff, "{\n \"result\": { "
 			"\n\"ledMode\": \"%d\","
 			"\n\"ledShow\": \"%d\","
+			"\n\"brightness\": \"%d\","
 			"\n\"lightReading\": \"%d\","
 			"\n\"lightThreshold\": \"%d\","
 			"\n\"batteryStatus\": \"%d\","
@@ -120,6 +121,7 @@ int ICACHE_FLASH_ATTR cgiStatus(HttpdConnData *connData) {
 			"\n }\n}\n",
 			myStatus.ledMode,
 			myStatus.ledShow,
+			myStatus.brightness,
 			myStatus.lightReading,
 			myStatus.lightThreshold,
 			myStatus.batteryStatus,
@@ -250,6 +252,17 @@ int ICACHE_FLASH_ATTR cgiSetLightThreshold(HttpdConnData *connData) {
 	return HTTPD_CGI_DONE;
 }
 
+void ICACHE_FLASH_ATTR tplLedShow(HttpdConnData *connData, char *token, void **arg) {
+	char buff[128];
+	if (token==NULL) return;
+
+	os_strcpy(buff, "Unknown");
+	if (os_strcmp(token, "ledShow")==0) {
+		os_sprintf(buff, "%d", currLedShow);
+	}
+	httpdSend(connData, buff, -1);
+}
+
 int ICACHE_FLASH_ATTR cgiLedShow(HttpdConnData *connData) {
 	int len;
 	char buff[1024];
@@ -269,13 +282,32 @@ int ICACHE_FLASH_ATTR cgiLedShow(HttpdConnData *connData) {
 	return HTTPD_CGI_DONE;
 }
 
-void ICACHE_FLASH_ATTR tplLedShow(HttpdConnData *connData, char *token, void **arg) {
+void ICACHE_FLASH_ATTR tplSetBrightness(HttpdConnData *connData, char *token, void **arg) {
 	char buff[128];
 	if (token==NULL) return;
 
-	os_strcpy(buff, "Unknown");
-	if (os_strcmp(token, "ledShow")==0) {
-		os_sprintf(buff, "%d", currLedShow);
+	uint8_t currentBrightness = getBrightness();
+
+	if (os_strcmp(token, "brightness")==0) {
+		os_sprintf(buff, "%d", currentBrightness);
 	}
 	httpdSend(connData, buff, -1);
+}
+
+int ICACHE_FLASH_ATTR cgiSetBrightness(HttpdConnData *connData) {
+	int len;
+	char buff[1024];
+
+	if (connData->conn==NULL) {
+		//Connection aborted. Clean up.
+		return HTTPD_CGI_DONE;
+	}
+
+	len=httpdFindArg(connData->postBuff, "brightness", buff, sizeof(buff));
+	if (len!=0) {
+		setBrightness(atoi(buff));
+	}
+
+	httpdRedirect(connData, "setbrightness.tpl");
+	return HTTPD_CGI_DONE;
 }

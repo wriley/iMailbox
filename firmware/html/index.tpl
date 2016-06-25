@@ -29,6 +29,9 @@ function updateInfo() {
 			var statusDiv=document.getElementById("lightThreshold");
 			statusDiv.innerHTML=data.result.lightThreshold;
 			
+			var statusDiv=document.getElementById("brightness");
+			statusDiv.innerHTML=data.result.brightness;
+			
 			var statusDiv=document.getElementById("batteryStatus");
 			if(data.result.batteryStatus == 1 || data.result.batteryStatus == 7) {
 				statusDiv.innerHTML="<font class=\"error\">"+batteryStatusArray[data.result.batteryStatus]+"</font>";
@@ -75,6 +78,7 @@ window.onload=function(e) {
 <strong>Uptime:</strong> <span id="uptimeSeconds">--</span><br>
 <strong>LED Mode:</strong> <span id="ledMode">--</span><br>
 <strong>Light Sensor Override:</strong> <span id="ledShow">--</span><br>
+<strong>Brightness:</strong> <span id="brightness">--</span><br>
 <strong>Light Reading:</strong> <span id="lightReading">--</span><br>
 <strong>Light Threshold:</strong> <span id="lightThreshold">--</span><br>
 <strong>Battery Status:</strong> <span id="batteryStatus">--</span><br> 
