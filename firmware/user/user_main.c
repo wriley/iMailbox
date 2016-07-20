@@ -98,25 +98,29 @@ HttpdBuiltInUrl builtInUrls[]={
 static os_timer_t timerUptime;
 static os_timer_t timerZabbix;
 static os_timer_t timerLEDMode;
+static os_timer_t timerUpdateStatus;
 
-void timerFunctionUptime(void *arg)
-{
+static uint8_t batteryStatusCount = 0;
+static uint8_t batteryStatusCountFlag = 0;
+
+void timerFunctionUptime(void *arg) {
 	incrementUptimeSeconds();
 }
 
 void timerFunctionZabbix(void *arg) {
-	updateStatus();
-	sendToZabbix();
+	struct iMailboxStatus currentStatus = getStatus();
+
+	if((currentStatus.batteryStatus != LOWBATTERY) && (currentStatus.batteryStatus != FAULT)) {
+		sendToZabbix();
+	}
 }
 
 void timerFunctionLEDMode(void *arg) {
 	struct iMailboxStatus currentStatus = getStatus();
 
 	if(
-		((currentStatus.lightReading < currentStatus.lightThreshold) ||
-		(currentStatus.ledShow == 1)) &&
-		(currentStatus.batteryStatus != LOWBATTERY) &&
-		(currentStatus.batteryStatus != FAULT)
+		((currentStatus.lightReading < currentStatus.lightThreshold) || (currentStatus.ledShow == 1)) &&
+		(currentStatus.batteryStatus != LOWBATTERY) && (currentStatus.batteryStatus != FAULT)
 	) {
 		char mode = getMode();
 
@@ -146,6 +150,44 @@ void timerFunctionLEDMode(void *arg) {
 	}
 }
 
+void timerFunctionUpdateStatus(void *arg) {
+	updateStatus();
+
+	struct iMailboxStatus currentStatus = getStatus();
+
+	if((currentStatus.batteryStatus == LOWBATTERY) || (currentStatus.batteryStatus == FAULT)) {
+		batteryStatusCountFlag = 1;
+		if(batteryStatusCount < 9) {
+			batteryStatusCount++;
+		}
+	} else {
+		if(batteryStatusCount > 0) {
+			batteryStatusCount--;
+		}
+	}
+
+	if(batteryStatusCount == 1) {
+		os_printf("Battery low or faulted, disabling LED and Zabbix timers\n");
+		// Turn off
+		showColorSingle(0);
+		// Disable timers
+		os_timer_disarm(&timerLEDMode);
+		os_timer_disarm(&timerZabbix);
+	}
+
+	if((batteryStatusCount == 0) && (batteryStatusCountFlag == 1)) {
+		batteryStatusCountFlag = 0;
+		os_printf("Enabling LED and Zabbix timers\n");
+		os_timer_disarm(&timerLEDMode);
+		os_timer_setfn(&timerLEDMode, (os_timer_func_t *)timerFunctionLEDMode, NULL);
+		os_timer_arm(&timerLEDMode, 100, 1);
+
+		os_timer_disarm(&timerZabbix);
+		os_timer_setfn(&timerZabbix, (os_timer_func_t *)timerFunctionZabbix, NULL);
+		os_timer_arm(&timerZabbix, 60000, 1);
+	}
+}
+
 void timerInit(void) {
 	// increment uptime
 	os_timer_disarm(&timerUptime);
@@ -157,10 +199,15 @@ void timerInit(void) {
 	os_timer_setfn(&timerLEDMode, (os_timer_func_t *)timerFunctionLEDMode, NULL);
 	os_timer_arm(&timerLEDMode, 100, 1);
 
-	// update status and send Zabbix data
+	// send Zabbix data
 	os_timer_disarm(&timerZabbix);
 	os_timer_setfn(&timerZabbix, (os_timer_func_t *)timerFunctionZabbix, NULL);
 	os_timer_arm(&timerZabbix, 60000, 1);
+
+	// update status
+	os_timer_disarm(&timerUpdateStatus);
+	os_timer_setfn(&timerUpdateStatus, (os_timer_func_t *)timerFunctionUpdateStatus, NULL);
+	os_timer_arm(&timerUpdateStatus, 60000, 1);
 }
 
 //Main routine. Initialize stdout, the I/O and the webserver and we're done.
