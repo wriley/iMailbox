@@ -44,7 +44,6 @@ void updateBatteryStatus(void) {
 }
 
 struct iMailboxStatus getStatus(void) {
-	updateBatteryStatus();
 	return myStatus;
 }
 
