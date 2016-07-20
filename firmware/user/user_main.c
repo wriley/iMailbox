@@ -153,6 +153,8 @@ void timerFunctionLEDMode(void *arg) {
 void timerFunctionUpdateStatus(void *arg) {
 	updateStatus();
 
+	os_printf("%s: batteryStatusCount: %d BatteryStatusCountFlag: %d\n", __FUNCTION__, batteryStatusCount, batteryStatusCountFlag);
+
 	struct iMailboxStatus currentStatus = getStatus();
 
 	if((currentStatus.batteryStatus == LOWBATTERY) || (currentStatus.batteryStatus == FAULT)) {
