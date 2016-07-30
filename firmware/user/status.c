@@ -56,7 +56,7 @@ char getMode(void) {
 	return myStatus.ledMode;
 }
 
-void setMode(char m) {
+void setMode(uint8_t m) {
 	myStatus.ledMode = m;
 	saveStatus();
 }

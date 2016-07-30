@@ -35,7 +35,7 @@ struct iMailboxStatus getStatus(void);
 void updateStatus(void);
 void incrementUptimeSeconds(void);
 char getMode(void);
-void setMode(char);
+void setMode(uint8_t);
 uint32_t getColorSingle(void);
 void setColorSingle(uint32_t);
 uint16_t getLightThreshold(void);
