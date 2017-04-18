@@ -23,7 +23,7 @@ SDK_BASE	?= C:\Espressif\ESP8266_SDK
 
 #Esptool.py path and port
 ESPTOOL		?= C:\Espressif\utils\esptool.exe
-ESPPORT		?= COM4
+ESPPORT		?= COM13
 
 # name for the target project
 TARGET		= iMailbox
