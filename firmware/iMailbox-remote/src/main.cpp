@@ -44,6 +44,11 @@ uint8_t cmdLEDG = 255;
 uint8_t cmdLEDB = 0;
 bool runRainbow = false;
 byte currentRainbow = 0;
+bool isDark = false;
+byte darkReadings = 0;
+bool modeNotOff = false;
+bool isDisabled = false;
+bool isFirstStatus = false;
 
 Ticker statusTicker;
 Ticker uptimeTicker;
@@ -64,6 +69,7 @@ struct __attribute__((aligned(4))) iMailboxStatus {
 };
 
 iMailboxStatus myStatus;
+iMailboxStatus myStatusSet;
 
 typedef enum {
 	ONBATTERY,
@@ -102,10 +108,14 @@ void updateBatteryStatus(void) {
 	 uint8_t battDone = !digitalRead(BATTDONEGPIO);
 	 uint8_t battPG = !digitalRead(BATTPGGPIO);
 	 myStatus.batteryStatus = battChg + (battDone * 2) + (battPG * 4);
+	 Serial.print("batteryStatus: ");
+	 Serial.println(myStatus.batteryStatus);
 }
 
 void updateLightReading(void) {
 	myStatus.lightReading = analogRead(LIGHTLEVELADC);
+	Serial.print("lightReading: ");
+	Serial.println(myStatus.lightReading);
 }
 
 // Fill the dots one after the other with a color
@@ -213,17 +223,33 @@ void dumpStatus() {
 }
 
 void sendStatus() {
+	Serial.println("Sending status to base station");
   HC12.print("SS");
   HC12.write((char *)&myStatus, sizeof(iMailboxStatus));
   HC12.println();
 }
 
-void statusCB() {
-	Serial.println("Sending status to base station");
-	dumpStatus();
-	sendStatus();
+void requestStatus() {
 	Serial.println("Requesting status from base station");
 	HC12.println("RS");
+}
+
+void statusCB() {
+	updateBatteryStatus();
+	updateLightReading();
+	if(myStatus.lightReading > myStatus.lightThreshold) {
+		darkReadings++;
+	} else {
+		darkReadings--;
+	}
+	if(darkReadings >= 5) {
+		isDark = true;
+		darkReadings = 5;
+	} else if(darkReadings <= 0) {
+		isDark = false;
+		darkReadings = 0;
+	}
+	sendStatus();
 }
 
 void toggleLED() {
@@ -258,8 +284,10 @@ void updateRainbow() {
 }
 
 void setFromStatus() {
+	modeNotOff = true;
 	switch(myStatus.ledMode) {
 		case OFF:
+			modeNotOff = false;
 			setAllPixels(strip.Color(0, 0, 0));
 			strip.show();
 			break;
@@ -284,11 +312,17 @@ void setup() {
 
   HC12ReadBuffer.reserve(64);
 
-	pinMode(1, OUTPUT);	// Built in LED on DigiSpark Pro
-	digitalWrite(1, ledState);
+	pinMode(LED_BUILTIN, OUTPUT);
 
+	// setup GPIO
+	pinMode(BATTCHARGEGPIO, INPUT_PULLUP);
+	pinMode(BATTDONEGPIO, INPUT_PULLUP);
+	pinMode(BATTPGGPIO, INPUT_PULLUP);
   pinMode(HC12SetPin, OUTPUT);                  // Output High for Transparent / Low for Command
   pinMode(pixelPin, OUTPUT);
+
+	digitalWrite(LED_BUILTIN, ledState);
+
   digitalWrite(HC12SetPin, HIGH);               // Enter Transparent mode
   delay(80);                                    // 80 ms delay before operation per datasheet
   HC12.begin(9600);                             // Open software serial port to HC12
@@ -299,7 +333,7 @@ void setup() {
 	myStatus.colorFade2 = 0;
 	myStatus.lightReading = 0;
 	myStatus.lightThreshold = 400;
-	myStatus.ledMode = SINGLECOLOR;
+	myStatus.ledMode = RGBFADE;
 	myStatus.ledShow = 0;
 	myStatus.batteryStatus = 0;
 	myStatus.brightness = 63;
@@ -318,9 +352,10 @@ void setup() {
   strip.begin();
   strip.show();
 
+	updateBatteryStatus();
+	updateLightReading();
 	setFromStatus();
-
-	sendStatus();
+	requestStatus();
 
   Serial.println("Setup done, entering main loop");
 }
@@ -349,21 +384,27 @@ void loop() {
     }
 
     if (HC12ReadBuffer.startsWith("SS")) {
-			Serial.println("Got Status");
+			Serial.println("Received status from base");
 			HC12ReadBuffer.trim();
 			byte buf[sizeof(iMailboxStatus)];
 			for(uint8_t i = 0; i < sizeof(iMailboxStatus); i++) {
 				buf[i] = HC12ReadBuffer[i+2];
 			}
-			uint32_t temp = myStatus.uptimeSeconds;
-			memcpy((void *)&myStatus, buf, sizeof(iMailboxStatus));
-			myStatus.uptimeSeconds = temp;
+			memcpy((void *)&myStatusSet, buf, sizeof(iMailboxStatus));
+			myStatus.ledMode = myStatusSet.ledMode;
+			myStatus.colorSingle = myStatusSet.colorSingle;
+			myStatus.ledShow = myStatusSet.ledShow;
+			myStatus.brightness = myStatusSet.brightness;
+			myStatus.lightThreshold = myStatusSet.lightThreshold;
 			setFromStatus();
-			dumpStatus();
+			if(isFirstStatus) {
+				isFirstStatus = false;
+				sendStatus();
+			}
 		}
 
 		if (HC12ReadBuffer.startsWith("RS")) {
-			Serial.println("Got Status Request");
+			Serial.println("Got status request from base");
 			sendStatus();
 		}
 
@@ -371,15 +412,29 @@ void loop() {
     HC12End = false;                            // Reset flag
   }
 
-	if(runRainbow) {
-		if(rainbowTicker.state() == STOPPED) {
-			Serial.println("starting rainbow");
-			rainbowTicker.start();
+  // Control logic
+	if(isDark || myStatus.ledShow == 1) {
+		if(isDisabled) {
+			Serial.println("Re-enabling!");
+			isDisabled = false;
+		}
+
+		if(runRainbow) {
+			if(rainbowTicker.state() == STOPPED) {
+				rainbowTicker.start();
+			}
+		} else {
+			rainbowTicker.stop();
 		}
 	} else {
-		if(rainbowTicker.state() == RUNNING) {
-			Serial.println("stopping rainbow");
+		if(rainbowTicker.state() != STOPPED) {
 			rainbowTicker.stop();
+		}
+		if(!isDisabled) {
+			Serial.println("Disabling!");
+			strip.clear();
+			strip.show();
+			isDisabled = true;
 		}
 	}
 }

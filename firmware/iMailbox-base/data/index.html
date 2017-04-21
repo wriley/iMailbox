@@ -5,8 +5,7 @@
 <script type="text/javascript">
 var xhr=j();
 var batteryStatusArray=["On Battery","Low Battery","Unknown","Unknown","On Solar","Charging","Charge Complete","Temperature or Timer Fault"];
-var ledModeArray=["Off","Single Color","RGB Fade","Single Color Fade","2 Color Fade"];
-var ledShowArray=["Off","On"];
+var ledModeArray=["Off","Single Color","RGB Fade"];
 
 var ledMode = 0;
 
@@ -41,7 +40,7 @@ function updateInfo() {
 				}
 			}
 
-			var el=document.getElementById("ledShow");
+			var el=document.getElementById("ledShowCheck");
 			if(data.ledShow == 1) {
 				el.checked = true;
 			} else {
@@ -121,10 +120,23 @@ window.onload=function(e) {
 	updateInfo();
 	createModeSelect();
 };
+
+function CheckAndSubmit() {
+	var el = document.getElementById("ledShowCheck");
+	if(el != null) {
+		if(el.checked) {
+			var el2 = document.getElementById("ledShow");
+			if(el2 != null) {
+				el2.value = 1;
+			}
+		}
+	}
+}
 </script>
 </head>
 <body>
 <form method="POST" action="set.cgi">
+<input type="hidden" id="ledShow" name="ledShow" value="0">
 <div id="main">
 iMailbox
 <hr>
@@ -135,13 +147,13 @@ iMailbox
 <strong>Remote</strong><br>
 <strong>Uptime:</strong> <span id="uptimeSeconds">--</span><br>
 <strong>LED Mode:</strong> <select id="ledMode" name="ledMode"></select><br>
-<strong>Light Sensor Override:</strong> <input type="checkbox" id="ledShow" name="ledShow"><br>
+<strong>Light Sensor Override:</strong> <input type="checkbox" id="ledShowCheck" name="ledShowCheck"><br>
 <strong>Brightness:</strong> <input type="text" id="brightness" name="brightness" size="4"><br>
 <strong>Light Reading:</strong> <span id="lightReading">--</span><br>
 <strong>Light Threshold:</strong> <input type="text" id="lightThreshold" name="lightThreshold" size="4"><br>
 <strong>Battery Status:</strong> <span id="batteryStatus">--</span><br>
 <br>
-<input type="submit" value="Change">
+<input type="submit" value="Change" onClick="CheckAndSubmit();">
 </div>
 </form>
 </body></html>
