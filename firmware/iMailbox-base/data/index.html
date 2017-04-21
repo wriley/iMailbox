@@ -87,9 +87,16 @@ function secondsToDateString(sec_num) {
 
 	var seconds = Math.round(sec_num);
 
-    var time = days+'d '+hours+'h '+minutes+'m '+seconds+'s';
+	var time = "";
+	if(days > 0)
+		time += days+'d ';
+	if(hours > 0)
+		time += hours+'h ';
+	if(minutes > 0)
+		time += minutes+'m ';
+	time += seconds+'s';
 
-    return time;
+  return time;
 }
 
 // from http://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
