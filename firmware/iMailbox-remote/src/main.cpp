@@ -191,10 +191,17 @@ void DumpStatus() {
 }
 
 void SendStatus() {
-	DumpStatus();
-  HC12.print("RS");
+  HC12.print("SS");
   HC12.write((char *)&myStatus, sizeof(iMailboxStatus));
   HC12.println();
+}
+
+void StatusCB() {
+	Serial.println("Sending status to base station");
+	DumpStatus();
+	SendStatus();
+	Serial.println("Requesting status from base station");
+	HC12.println("RS");
 }
 
 void toggleLED() {
@@ -223,19 +230,37 @@ void SetAllPixels(uint32_t c) {
 }
 
 void UpdateRainbow() {
-	Serial.print("Wheel: ");
-	Serial.print(currentRainbow);
 	SetAllPixels(Wheel(currentRainbow));
 	strip.show();
 	currentRainbow++;
 }
 
+void SetFromStatus() {
+	switch(myStatus.ledMode) {
+		case OFF:
+			SetAllPixels(strip.Color(0, 0, 0));
+			strip.show();
+			break;
+		case SINGLECOLOR:
+			SetAllPixels(myStatus.colorSingle);
+			strip.show();
+			break;
+		case RGBFADE:
+			runRainbow = true;
+			break;
+	}
+
+	strip.setBrightness(myStatus.brightness);
+}
+
 void setup() {
   Serial.begin(115200);
   delay(100);
+	Serial.println();
+	Serial.println();
   Serial.println("Begin setup");
 
-  HC12ReadBuffer.reserve(50);
+  HC12ReadBuffer.reserve(64);
 
 	pinMode(1, OUTPUT);	// Built in LED on DigiSpark Pro
 	digitalWrite(1, ledState);
@@ -252,13 +277,13 @@ void setup() {
 	myStatus.colorFade2 = 0;
 	myStatus.lightReading = 0;
 	myStatus.lightThreshold = 400;
-	myStatus.ledMode = OFF;
-	myStatus.ledShow = 1;
+	myStatus.ledMode = SINGLECOLOR;
+	myStatus.ledShow = 0;
 	myStatus.batteryStatus = 0;
 	myStatus.brightness = 63;
 
-  statusTicker.setCallback(SendStatus);
-  statusTicker.setInterval(10000);
+  statusTicker.setCallback(StatusCB);
+  statusTicker.setInterval(60000);
   statusTicker.start();
 
   uptimeTicker.setCallback(IncrementUptime);
@@ -271,6 +296,10 @@ void setup() {
   strip.begin();
   strip.show();
 
+	SetFromStatus();
+
+	SendStatus();
+
   Serial.println("Setup done, entering main loop");
 }
 
@@ -278,6 +307,47 @@ void loop() {
   statusTicker.update();
   uptimeTicker.update();
 	rainbowTicker.update();
+
+  while (HC12.available()) {                    // While Arduino's HC12 soft serial rx buffer has data
+    HC12ByteIn = HC12.read();                   // Store each character from rx buffer in byteIn
+    HC12ReadBuffer += char(HC12ByteIn);         // Write each character of byteIn to HC12ReadBuffer
+    if (HC12ByteIn == '\n') {                   // At the end of the line
+      HC12End = true;                           // Set HC12End flag to true
+    }
+  }
+
+  if (HC12End) {                                // If HC12End flag is true
+    if (HC12ReadBuffer.startsWith("AT")) {      // Check to see if a command is received from remote
+      digitalWrite(HC12SetPin, LOW);            // Enter command mode
+      delay(100);                               // Delay before sending command
+			HC12.print(HC12ReadBuffer);               // Write command to local HC12
+      delay(500);                               // Wait 0.5 s for reply
+      digitalWrite(HC12SetPin, HIGH);           // Exit command / enter transparent mode
+      delay(100);                               // Delay before proceeding
+    }
+
+    if (HC12ReadBuffer.startsWith("SS")) {
+			Serial.println("Got Status");
+			HC12ReadBuffer.trim();
+			byte buf[sizeof(iMailboxStatus)];
+			for(uint8_t i = 0; i < sizeof(iMailboxStatus); i++) {
+				buf[i] = HC12ReadBuffer[i+2];
+			}
+			uint32_t temp = myStatus.uptimeSeconds;
+			memcpy((void *)&myStatus, buf, sizeof(iMailboxStatus));
+			myStatus.uptimeSeconds = temp;
+			SetFromStatus();
+			DumpStatus();
+		}
+
+		if (HC12ReadBuffer.startsWith("RS")) {
+			Serial.println("Got Status Request");
+			SendStatus();
+		}
+
+    HC12ReadBuffer = "";                        // Empty buffer
+    HC12End = false;                            // Reset flag
+  }
 
 	if(runRainbow) {
 		if(rainbowTicker.state() == STOPPED) {
@@ -290,107 +360,4 @@ void loop() {
 			rainbowTicker.stop();
 		}
 	}
-
-  while (HC12.available()) {                    // While Arduino's HC12 soft serial rx buffer has data
-    HC12ByteIn = HC12.read();                   // Store each character from rx buffer in byteIn
-    HC12ReadBuffer += char(HC12ByteIn);         // Write each character of byteIn to HC12ReadBuffer
-    if (HC12ByteIn == '\n') {                   // At the end of the line
-      HC12End = true;                           // Set HC12End flag to true
-    }
-  }
-
-  if (HC12End) {                                // If HC12End flag is true
-    if (HC12ReadBuffer.startsWith("AT")) {      // Check to see if a command is received from remote
-      //digitalWrite(HC12SetPin, LOW);            // Enter command mode
-      //delay(100);                               // Delay before sending command
-			Serial.println("in AT block");
-      Serial.print(HC12ReadBuffer);               // Write command to local HC12
-      //delay(500);                               // Wait 0.5 s for reply
-      //digitalWrite(HC12SetPin, HIGH);           // Exit command / enter transparent mode
-      //delay(100);                               // Delay before proceeding
-    }
-
-    if (HC12ReadBuffer.startsWith("PC")) {
-      Serial.println("Got PC");
-			Serial.print(HC12ReadBuffer);
-			String sval = HC12ReadBuffer.substring(2, HC12ReadBuffer.length());
-			sval.trim();
-			uint32_t val = sval.toInt();
-			Serial.print("sval: ");
-			Serial.println(sval);
-			Serial.print("sval.toInt: ");
-			Serial.println(sval.toInt());
-			cmdLEDR = (uint8_t) (val >> 16);
-			cmdLEDG = (uint8_t) (val >> 8);
-			cmdLEDB = (uint8_t) val;
-			Serial.print(cmdLEDR, HEX);
-			Serial.print(" ");
-			Serial.print(cmdLEDG, HEX);
-			Serial.print(" ");
-			Serial.print(cmdLEDB, HEX);
-			Serial.println();
-			SetAllPixels(cmdLEDR, cmdLEDG, cmdLEDB);
-			strip.show();
-		}
-
-		if (HC12ReadBuffer.startsWith("PM")) {
-			Serial.println("Got PM");
-			String sval = HC12ReadBuffer.substring(2, HC12ReadBuffer.length());
-			uint8_t val = sval.toInt();
-			myStatus.ledMode = val;
-
-			Serial.println(myStatus.ledMode);
-
-			switch(myStatus.ledMode) {
-				case OFF:
-					SetAllPixels(0, 0, 0);
-					runRainbow = false;
-					break;
-				case SINGLECOLOR:
-					runRainbow = false;
-					SetAllPixels(cmdLEDR, cmdLEDG, cmdLEDB);
-					break;
-				case RGBFADE:
-					runRainbow = true;
-					break;
-				default:
-					Serial.println("Default case");
-					runRainbow = false;
-					SetAllPixels(0, 0, 0);
-					break;
-			}
-			strip.show();
-		}
-
-		if (HC12ReadBuffer.startsWith("PS")) {
-			Serial.println("Got PS");
-			String sval = HC12ReadBuffer.substring(2, HC12ReadBuffer.length());
-			uint8_t val = sval.toInt();
-			myStatus.ledShow = val;
-
-			Serial.println(myStatus.ledShow);
-		}
-
-		if (HC12ReadBuffer.startsWith("PT")) {
-			Serial.println("Got PT");
-			String sval = HC12ReadBuffer.substring(2, HC12ReadBuffer.length());
-			uint16_t val = sval.toInt();
-			myStatus.lightThreshold = val;
-
-			Serial.println(myStatus.lightThreshold);
-		}
-
-		if (HC12ReadBuffer.startsWith("PB")) {
-			Serial.println("Got PB");
-			String sval = HC12ReadBuffer.substring(2, HC12ReadBuffer.length());
-			uint8_t val = sval.toInt();
-			myStatus.brightness = val;
-			strip.setBrightness(myStatus.brightness);
-			strip.show();
-			Serial.println(myStatus.brightness);
-		}
-
-    HC12ReadBuffer = "";                        // Empty buffer
-    HC12End = false;                            // Reset flag
-  }
 }
