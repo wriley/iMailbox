@@ -11,11 +11,11 @@ var ledShowArray=["Off","On"];
 var ledMode = 0;
 
 function updateInfo() {
-	xhr.open("GET", "/status");
+	xhr.open("GET", "/status", true);
 	xhr.timeout = 5000;
 	xhr.ontimeout = function() {
-		console.log("Timed out, will retry");
-		window.setTimeout(updateInfo, 5000);
+		console.log("Timed out getting status, will retry in 10 seconds");
+		window.setTimeout(updateInfo, 10000);
 	}
 	xhr.onreadystatechange=function() {
 		if (xhr.readyState==4 && xhr.status>=200 && xhr.status<300) {
