@@ -2,17 +2,28 @@
 
 Arduino Pro Mini connections
 2 NeoPixel
+3 Battery charge
+4 Battery Done
+5 Battery Power Good
 
 6 HC-12 TX
 7 HC-12 RX
 9 HC-12 Set
 
+14 Photocell (ADC)
 
 */
 
 #include <Adafruit_NeoPixel.h>
 #include <Ticker.h>
 #include <SoftwareSerial.h>
+
+// pin for photocell
+#define LIGHTLEVELADC 14
+// pins for battery status from solar charge controller
+#define BATTCHARGEGPIO 3
+#define BATTDONEGPIO 4
+#define BATTPGGPIO 5
 
 const byte HC12SetPin = 9;
 const byte pixelPin = 2;
@@ -86,6 +97,17 @@ uint32_t Wheel(byte WheelPos) {
   }
 }
 
+void updateBatteryStatus(void) {
+	 uint8_t battChg = !digitalRead(BATTCHARGEGPIO);
+	 uint8_t battDone = !digitalRead(BATTDONEGPIO);
+	 uint8_t battPG = !digitalRead(BATTPGGPIO);
+	 myStatus.batteryStatus = battChg + (battDone * 2) + (battPG * 4);
+}
+
+void updateLightReading(void) {
+	myStatus.lightReading = analogRead(LIGHTLEVELADC);
+}
+
 // Fill the dots one after the other with a color
 void colorWipe(uint32_t c, uint8_t wait) {
   for (uint16_t i = 0; i < strip.numPixels(); i++) {
@@ -156,7 +178,7 @@ void theaterChaseRainbow(uint8_t wait) {
   }
 }
 
-void DumpStatus() {
+void dumpStatus() {
 	Serial.println("STATUS DUMP:");
 
 	Serial.print("SD* uptimeSeconds: ");
@@ -190,16 +212,16 @@ void DumpStatus() {
 	Serial.println(myStatus.brightness);
 }
 
-void SendStatus() {
+void sendStatus() {
   HC12.print("SS");
   HC12.write((char *)&myStatus, sizeof(iMailboxStatus));
   HC12.println();
 }
 
-void StatusCB() {
+void statusCB() {
 	Serial.println("Sending status to base station");
-	DumpStatus();
-	SendStatus();
+	dumpStatus();
+	sendStatus();
 	Serial.println("Requesting status from base station");
 	HC12.println("RS");
 }
@@ -212,37 +234,37 @@ void toggleLED() {
 	digitalWrite(LED_BUILTIN, ledState);
 }
 
-void IncrementUptime() {
+void incrementUptime() {
   myStatus.uptimeSeconds++;
 	toggleLED();
 }
 
-void SetAllPixels(byte r, byte g, byte b) {
+void setAllPixels(byte r, byte g, byte b) {
 	for(int i = 0; i < numPixels; i++) {
 		strip.setPixelColor(i, r, g, b);
 	}
 }
 
-void SetAllPixels(uint32_t c) {
+void setAllPixels(uint32_t c) {
 	for(int i = 0; i < numPixels; i++) {
 		strip.setPixelColor(i, c);
 	}
 }
 
-void UpdateRainbow() {
-	SetAllPixels(Wheel(currentRainbow));
+void updateRainbow() {
+	setAllPixels(Wheel(currentRainbow));
 	strip.show();
 	currentRainbow++;
 }
 
-void SetFromStatus() {
+void setFromStatus() {
 	switch(myStatus.ledMode) {
 		case OFF:
-			SetAllPixels(strip.Color(0, 0, 0));
+			setAllPixels(strip.Color(0, 0, 0));
 			strip.show();
 			break;
 		case SINGLECOLOR:
-			SetAllPixels(myStatus.colorSingle);
+			setAllPixels(myStatus.colorSingle);
 			strip.show();
 			break;
 		case RGBFADE:
@@ -282,23 +304,23 @@ void setup() {
 	myStatus.batteryStatus = 0;
 	myStatus.brightness = 63;
 
-  statusTicker.setCallback(StatusCB);
+  statusTicker.setCallback(statusCB);
   statusTicker.setInterval(60000);
   statusTicker.start();
 
-  uptimeTicker.setCallback(IncrementUptime);
+  uptimeTicker.setCallback(incrementUptime);
   uptimeTicker.setInterval(1000);
   uptimeTicker.start();
 
-	rainbowTicker.setCallback(UpdateRainbow);
+	rainbowTicker.setCallback(updateRainbow);
   rainbowTicker.setInterval(200);
 
   strip.begin();
   strip.show();
 
-	SetFromStatus();
+	setFromStatus();
 
-	SendStatus();
+	sendStatus();
 
   Serial.println("Setup done, entering main loop");
 }
@@ -336,13 +358,13 @@ void loop() {
 			uint32_t temp = myStatus.uptimeSeconds;
 			memcpy((void *)&myStatus, buf, sizeof(iMailboxStatus));
 			myStatus.uptimeSeconds = temp;
-			SetFromStatus();
-			DumpStatus();
+			setFromStatus();
+			dumpStatus();
 		}
 
 		if (HC12ReadBuffer.startsWith("RS")) {
 			Serial.println("Got Status Request");
-			SendStatus();
+			sendStatus();
 		}
 
     HC12ReadBuffer = "";                        // Empty buffer
