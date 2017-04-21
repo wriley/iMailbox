@@ -1,4 +1,1 @@
-firmware/include/user_config.h
-firmware/build
-firmware/firmware
-firmware/webpages.espfs
+firmware/iMailbox-base/src/config.h
