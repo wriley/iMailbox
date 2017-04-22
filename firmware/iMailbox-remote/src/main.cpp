@@ -339,7 +339,7 @@ void setup() {
 	myStatus.brightness = 63;
 
   statusTicker.setCallback(statusCB);
-  statusTicker.setInterval(60000);
+  statusTicker.setInterval(10000);
   statusTicker.start();
 
   uptimeTicker.setCallback(incrementUptime);
@@ -356,6 +356,8 @@ void setup() {
 	updateLightReading();
 	setFromStatus();
 	requestStatus();
+
+	//dumpStatus();
 
   Serial.println("Setup done, entering main loop");
 }
@@ -401,6 +403,7 @@ void loop() {
 				isFirstStatus = false;
 				sendStatus();
 			}
+			//dumpStatus();
 		}
 
 		if (HC12ReadBuffer.startsWith("RS")) {
@@ -432,7 +435,7 @@ void loop() {
 		}
 		if(!isDisabled) {
 			Serial.println("Disabling!");
-			strip.clear();
+			setAllPixels(0);
 			strip.show();
 			isDisabled = true;
 		}

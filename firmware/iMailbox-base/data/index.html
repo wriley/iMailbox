@@ -6,6 +6,7 @@
 var xhr=j();
 var batteryStatusArray=["On Battery","Low Battery","Unknown","Unknown","On Solar","Charging","Charge Complete","Temperature or Timer Fault"];
 var ledModeArray=["Off","Single Color","RGB Fade"];
+var ledShowArray=["Off","On"];
 
 var ledMode = 0;
 
@@ -32,30 +33,20 @@ function updateInfo() {
 			var statusDiv=document.getElementById("uptimeSecondsBase");
 			statusDiv.innerHTML=secondsToDateString(data.uptimeSecondsBase);
 
-			var el=document.getElementById("ledMode");
-			for(var i = 0; i < el.options.length; i++) {
-				if(el.options[i].text == ledModeArray[data.ledMode]) {
-					el.selectedIndex = i;
-					break;
-				}
-			}
+			var statusDiv=document.getElementById("ledModeVal");
+			statusDiv.innerHTML=ledModeArray[data.ledMode];
 
-			var el=document.getElementById("ledShowCheck");
-			if(data.ledShow == 1) {
-				el.checked = true;
-			} else {
-				el.checked = false;
-			}
-
+			var statusDiv=document.getElementById("ledShowVal");
+			statusDiv.innerHTML=ledShowArray[data.ledShow];
 
 			var statusDiv=document.getElementById("lightReading");
 			statusDiv.innerHTML=data.lightReading;
 
-			var el=document.getElementById("lightThreshold");
-			el.value = data.lightThreshold;
+			var statusDiv=document.getElementById("lightThresholdVal");
+			statusDiv.innerHTML=data.lightThreshold;
 
-			var el=document.getElementById("brightness");
-			el.value = data.brightness;
+			var statusDiv=document.getElementById("brightnessVal");
+			statusDiv.innerHTML=data.brightness;
 
 			var statusDiv=document.getElementById("batteryStatus");
 			if(data.batteryStatus == 1 || data.batteryStatus == 7) {
@@ -146,11 +137,11 @@ iMailbox
 <hr>
 <strong>Remote</strong><br>
 <strong>Uptime:</strong> <span id="uptimeSeconds">--</span><br>
-<strong>LED Mode:</strong> <select id="ledMode" name="ledMode"></select><br>
-<strong>Light Sensor Override:</strong> <input type="checkbox" id="ledShowCheck" name="ledShowCheck"><br>
-<strong>Brightness:</strong> <input type="text" id="brightness" name="brightness" size="4"><br>
+<strong>LED Mode:</strong> <span id="ledModeVal">--</span>&nbsp;<select id="ledMode" name="ledMode"></select><br>
+<strong>Light Sensor Override:</strong> <span id="ledShowVal">--</span>&nbsp;<input type="checkbox" id="ledShowCheck" name="ledShowCheck"><br>
+<strong>Brightness:</strong> <span id="brightnessVal">--</span>&nbsp;<input type="text" id="brightness" name="brightness" size="4"><br>
 <strong>Light Reading:</strong> <span id="lightReading">--</span><br>
-<strong>Light Threshold:</strong> <input type="text" id="lightThreshold" name="lightThreshold" size="4"><br>
+<strong>Light Threshold:</strong> <span id="lightThresholdVal">--</span>&nbsp;<input type="text" id="lightThreshold" name="lightThreshold" size="4"><br>
 <strong>Battery Status:</strong> <span id="batteryStatus">--</span><br>
 <br>
 <input type="submit" value="Change" onClick="CheckAndSubmit();">
