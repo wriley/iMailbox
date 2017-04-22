@@ -1,3 +1,11 @@
+/*
+
+NOdeMCU connections
+12 HC-12 Tx
+14 HC-12 Rx
+
+*/
+
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <SoftwareSerial.h>
