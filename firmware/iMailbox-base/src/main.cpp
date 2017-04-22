@@ -32,7 +32,7 @@ struct __attribute__((aligned(4))) iMailboxStatus {
 	uint32_t colorFade2;
 	uint16_t lightReading;
 	uint16_t lightThreshold;
-	uint8_t dummy;
+	uint8_t auxInput;
 	uint8_t ledMode;
 	uint8_t ledShow;
 	uint8_t batteryStatus;
@@ -308,6 +308,7 @@ void handleStatus() {
 	root["lightThreshold"] = remoteStatus.lightThreshold;
 	root["batteryStatus"] = remoteStatus.batteryStatus;
 	root["uptimeSeconds"] = remoteStatus.uptimeSeconds;
+	root["colorSingle"] = remoteStatus.colorSingle;
 	root["uptimeSecondsBase"] = uptimeSeconds;
 	root["freeHeap"] = ESP.getFreeHeap();
 	root["lastStatus"] = millis() - lastStatus;
@@ -338,11 +339,13 @@ void handleSet() {
 				remoteStatus.ledMode = val;
 			}
 		} else if (arg == "currentColor") {
-			uint32_t val = httpServer.arg(i).toInt();
+			int32_t val = strtol(httpServer.arg(i).c_str(), 0, 16);
 			Serial.print("Got value: ");
 			Serial.println(val);
-			remoteStatusSet.colorSingle = val;
-			remoteStatus.colorSingle = val;
+			if(val >= 0) {
+				remoteStatusSet.colorSingle = val;
+				remoteStatus.colorSingle = val;
+			}
 		} else if (arg == "ledShow") {
 			uint8_t val = httpServer.arg(i).toInt();
 			Serial.print("Got value: ");
@@ -368,8 +371,8 @@ void handleSet() {
 				remoteStatus.lightThreshold = val;
 			}
 		}
-		sendStatus();
 	}
+	sendStatus();
 	send302("/");
 }
 

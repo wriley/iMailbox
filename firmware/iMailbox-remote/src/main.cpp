@@ -25,6 +25,7 @@ Arduino Pro Mini connections
 #define BATTCHARGEGPIO 3
 #define BATTDONEGPIO 4
 #define BATTPGGPIO 5
+#define AUXINGPIO 8
 #define HC12SETGPIO 9
 #define PIXELGPIO 2
 #define NUMBER_OF_PIXELS 12
@@ -61,7 +62,7 @@ struct __attribute__((aligned(4))) iMailboxStatus {
 	uint32_t colorFade2;
 	uint16_t lightReading;
 	uint16_t lightThreshold;
-	uint8_t dummy;
+	uint8_t auxInput;
 	uint8_t ledMode;
 	uint8_t ledShow;
 	uint8_t batteryStatus;
@@ -103,7 +104,7 @@ uint32_t Wheel(byte WheelPos) {
   }
 }
 
-void updateBatteryStatus(void) {
+void updateBatteryStatus() {
 	 uint8_t battChg = !digitalRead(BATTCHARGEGPIO);
 	 uint8_t battDone = !digitalRead(BATTDONEGPIO);
 	 uint8_t battPG = !digitalRead(BATTPGGPIO);
@@ -112,10 +113,16 @@ void updateBatteryStatus(void) {
 	 Serial.println(myStatus.batteryStatus);
 }
 
-void updateLightReading(void) {
+void updateLightReading() {
 	myStatus.lightReading = analogRead(LIGHTLEVELADC);
 	Serial.print("lightReading: ");
 	Serial.println(myStatus.lightReading);
+}
+
+void updateAuxInputStatus() {
+	myStatus.auxInput = !digitalRead(AUXINGPIO);
+	Serial.print("auxInput: ");
+	Serial.println(myStatus.auxInput);
 }
 
 // Fill the dots one after the other with a color
@@ -320,10 +327,12 @@ void setup() {
 
 	pinMode(LED_BUILTIN, OUTPUT);
 
-	// setup GPIO
+	// setup GPIO inputs
 	pinMode(BATTCHARGEGPIO, INPUT_PULLUP);
 	pinMode(BATTDONEGPIO, INPUT_PULLUP);
 	pinMode(BATTPGGPIO, INPUT_PULLUP);
+	pinMode(AUXINGPIO, INPUT_PULLUP);
+	// setup GPIO outputs
   pinMode(HC12SETGPIO, OUTPUT);                  // Output High for Transparent / Low for Command
   pinMode(PIXELGPIO, OUTPUT);
 

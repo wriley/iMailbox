@@ -62,6 +62,11 @@ function updateInfo() {
 				statusDiv.innerHTML=batteryStatusArray[data.batteryStatus];
 			}
 
+			var el = document.getElementById("currentColorLink");
+			if(el != null) {
+				el.setAttribute("href", "setcolor.html?currentColor=" + data.colorSingle.toString(16));
+			}
+
 			window.setTimeout(updateInfo, 5000);
 		}
 	}
@@ -139,8 +144,8 @@ iMailbox
 <strong>Remote</strong><br>
 <strong>Uptime:</strong> <span id="uptimeSeconds">--</span><br>
 <form method="POST" action="set.cgi"><strong>LED Mode:</strong> <span id="ledModeVal">--</span>&nbsp;<select id="ledMode" name="ledMode"></select>&nbsp;<input type="submit" value="Change"></form>
-<form method="POST" action="set.cgi"><input type="hidden" id="ledShow" name="ledShow" value="0">
-<strong>Light Sensor Override:</strong> <span id="ledShowVal">--</span>&nbsp;<input type="checkbox" id="ledShowCheck" name="ledShowCheck">&nbsp;<input type="submit" value="Change" onClick="CheckAndSubmit();">
+<form method="POST" action="set.cgi" onsubmit="return CheckAndSubmit();"><input type="hidden" id="ledShow" name="ledShow" value="0">
+<strong>Light Sensor Override:</strong> <span id="ledShowVal">--</span>&nbsp;<input type="checkbox" id="ledShowCheck" name="ledShowCheck">&nbsp;<input type="submit" value="Change">
 </form>
 <form method="POST" action="set.cgi">
 <strong>Brightness:</strong> <span id="brightnessVal">--</span>&nbsp;<input type="text" id="brightness" name="brightness" size="4">&nbsp;<input type="submit" value="Change"><br>
@@ -150,6 +155,8 @@ iMailbox
 <strong>Light Threshold:</strong> <span id="lightThresholdVal">--</span>&nbsp;<input type="text" id="lightThreshold" name="lightThreshold" size="4">&nbsp;<input type="submit" value="Change"><br>
 </form>
 <strong>Battery Status:</strong> <span id="batteryStatus">--</span><br>
+<br>
+<a id="currentColorLink" href="setcolor.html">Set LED Color</a>
 </div>
 </form>
 </body></html>

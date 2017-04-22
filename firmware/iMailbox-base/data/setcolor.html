@@ -1,5 +1,5 @@
-<html><head><title>iMailbox - Admin - Single LED Color</title>
-<link rel="stylesheet" type="text/css" href="../style.css">
+<html><head><title>iMailbox Single LED Color</title>
+<link rel="stylesheet" type="text/css" href="style.css">
 <link rel="stylesheet" href="themes.css">
 <script type="text/javascript" src="colorpicker.min.js"></script>
 <script type="text/javascript" src="functions.js"></script>
@@ -31,7 +31,7 @@ function CheckAndSubmit() {
 </head>
 <body>
 <div id="main">
-<p><a href="/">iMailbox</a> - <a href="/admin">Admin</a> - Single LED Color</p>
+<p><a href="/">iMailbox</a> - Single LED Color</p>
 	<div style="height:300px;">
 		<div id="color-picker" class="cp-default">
 			<div class="picker-wrapper">
@@ -43,7 +43,7 @@ function CheckAndSubmit() {
 				<div id="slide-indicator" class="slide-indicator"></div>
 			</div>
 			<div id="example" class="slide-wrapper"></div>
-			<form method="post" action="setcolor.cgi" onSubmit="return CheckAndSubmit()">
+			<form method="post" action="set.cgi" onSubmit="return CheckAndSubmit()">
 			<div class="slide-wrapper"><input type="text" name="currentColor" id="currentColor" size="6" maxlength="6" value=""></div>
 			<div class="slide-wrapper">
 				<input type="hidden" name="rgb_r" id="rgb_r" value="0">
