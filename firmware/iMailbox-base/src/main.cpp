@@ -67,12 +67,12 @@ void toggleLED() {
   digitalWrite(LED_BUILTIN, ledState);
 }
 
-void IncrementUptime() {
+void incrementUptime() {
   uptimeSeconds++;
 	toggleLED();
 }
 
-void WiFiEvent(WiFiEvent_t event) {
+void wifiEvent(WiFiEvent_t event) {
     Serial.printf("[WiFi-event] event: %d\n", event);
 
     switch(event) {
@@ -87,7 +87,7 @@ void WiFiEvent(WiFiEvent_t event) {
     }
 }
 
-void DumpStatus() {
+void dumpStatus() {
 	Serial.println("STATUS DUMP:");
 
 	Serial.print("SD* uptimeSeconds: ");
@@ -121,7 +121,7 @@ void DumpStatus() {
 	Serial.println(remoteStatus.brightness);
 }
 
-void DumpStatusSet() {
+void dumpStatusSet() {
 	Serial.println("STATUS DUMP:");
 
 	Serial.print("SD* uptimeSeconds: ");
@@ -155,17 +155,17 @@ void DumpStatusSet() {
 	Serial.println(remoteStatusSet.brightness);
 }
 
-void SendStatus() {
+void sendStatus() {
   HC12.print("SS");
   HC12.write((char *)&remoteStatusSet, sizeof(iMailboxStatus));
   HC12.println();
 }
 
-void RequestStatus() {
+void requestStatus() {
 	HC12.println("RS");
 }
 
-String GetContentType(String filename) {
+String getContentType(String filename) {
 	if (httpServer.hasArg("download")) return "application/octet-stream";
 	else if (filename.endsWith(".htm")) return "text/html";
 	else if (filename.endsWith(".html")) return "text/html";
@@ -183,7 +183,7 @@ String GetContentType(String filename) {
 	return "text/plain";
 }
 
-String FormatBytes(size_t bytes){
+String formatBytes(size_t bytes){
   if (bytes < 1024){
     return String(bytes)+"B";
   } else if(bytes < (1024 * 1024)){
@@ -195,10 +195,10 @@ String FormatBytes(size_t bytes){
   }
 }
 
-bool HandleFileRead(String path) {
+bool handleFileRead(String path) {
 	if (path.endsWith("/"))
 		path += "index.html";
-	String contentType = GetContentType(path);
+	String contentType = getContentType(path);
 	String pathWithGz = path + ".gz";
 	if (SPIFFS.exists(pathWithGz) || SPIFFS.exists(path)) {
 		if (SPIFFS.exists(pathWithGz))
@@ -211,7 +211,7 @@ bool HandleFileRead(String path) {
 	return false;
 }
 
-void HandleFileUpload(){
+void handleFileUpload(){
   if(httpServer.uri() != "/edit") return;
   HTTPUpload& upload = httpServer.upload();
   if(upload.status == UPLOAD_FILE_START){
@@ -228,7 +228,7 @@ void HandleFileUpload(){
   }
 }
 
-void HandleFileDelete(){
+void handleFileDelete(){
   if(httpServer.args() == 0) return httpServer.send(500, "text/plain", "BAD ARGS");
   String path = httpServer.arg(0);
   if(path == "/")
@@ -240,7 +240,7 @@ void HandleFileDelete(){
   path = String();
 }
 
-void HandleFileCreate(){
+void handleFileCreate(){
   if(httpServer.args() == 0)
     return httpServer.send(500, "text/plain", "BAD ARGS");
   String path = httpServer.arg(0);
@@ -257,7 +257,7 @@ void HandleFileCreate(){
   path = String();
 }
 
-void HandleFileList() {
+void handleFileList() {
   if(!httpServer.hasArg("dir")) {httpServer.send(500, "text/plain", "BAD ARGS"); return;}
 
   String path = httpServer.arg("dir");
@@ -281,8 +281,8 @@ void HandleFileList() {
   httpServer.send(200, "text/json", output);
 }
 
-void HandleNotFound(){
-	if(!HandleFileRead(httpServer.uri())) {
+void handleNotFound(){
+	if(!handleFileRead(httpServer.uri())) {
 	  String message = "File Not Found\n\n";
 	  message += "URI: ";
 	  message += httpServer.uri();
@@ -298,7 +298,7 @@ void HandleNotFound(){
 	}
 }
 
-void HandleStatus() {
+void handleStatus() {
 	StaticJsonBuffer<400> jsonBuffer;
 	JsonObject& root = jsonBuffer.createObject();
 	root["ledMode"] = remoteStatus.ledMode;
@@ -317,13 +317,13 @@ void HandleStatus() {
 	httpServer.send(200, "text/json", msg);
 }
 
-void Send302(String location) {
+void send302(String location) {
 	httpServer.sendHeader("Location", location, true);
 	httpServer.send(302, "text/plain", "");
 	httpServer.client().stop();
 }
 
-void HandleSet() {
+void handleSet() {
 	if(httpServer.uri() != "/set.cgi") return;
 	for(int i = 0; i < httpServer.args(); i++) {
 		String arg = httpServer.argName(i);
@@ -360,9 +360,9 @@ void HandleSet() {
 			remoteStatusSet.lightThreshold = val;
 			remoteStatus.lightThreshold = val;
 		}
-		SendStatus();
+		sendStatus();
 	}
-	Send302("/");
+	send302("/");
 }
 
 void setup() {
@@ -374,7 +374,7 @@ void setup() {
 	pinMode(LED_BUILTIN, OUTPUT);
 	digitalWrite(LED_BUILTIN, ledState);
 
-	uptimeTicker.setCallback(IncrementUptime);
+	uptimeTicker.setCallback(incrementUptime);
   uptimeTicker.setInterval(1000);
   uptimeTicker.start();
 
@@ -409,30 +409,30 @@ void setup() {
     while (dir.next()) {
       String fileName = dir.fileName();
       size_t fileSize = dir.fileSize();
-      Serial.printf("FS File: %s, size: %s\n", fileName.c_str(), FormatBytes(fileSize).c_str());
+      Serial.printf("FS File: %s, size: %s\n", fileName.c_str(), formatBytes(fileSize).c_str());
     }
     Serial.printf("\n");
   }
 
 	httpUpdater.setup(&httpServer, UPDATE_PATH, UPDATE_USERNAME, UPDATE_PASSWORD);
 
-	httpServer.on("/status", HTTP_GET, HandleStatus);
-	httpServer.on("/list", HTTP_GET, HandleFileList);
+	httpServer.on("/status", HTTP_GET, handleStatus);
+	httpServer.on("/list", HTTP_GET, handleFileList);
 	httpServer.on("/edit", HTTP_GET, [](){
-    if(!HandleFileRead("/edit.html")) httpServer.send(404, "text/plain", "FileNotFound");
+    if(!handleFileRead("/edit.html")) httpServer.send(404, "text/plain", "FileNotFound");
   });
-	httpServer.on("/edit", HTTP_PUT, HandleFileCreate);
-	httpServer.on("/edit", HTTP_DELETE, HandleFileDelete);
-	httpServer.on("/edit", HTTP_POST, [](){ httpServer.send(200, "text/plain", ""); }, HandleFileUpload);
-	httpServer.on("/set.cgi", HTTP_POST, HandleSet);
+	httpServer.on("/edit", HTTP_PUT, handleFileCreate);
+	httpServer.on("/edit", HTTP_DELETE, handleFileDelete);
+	httpServer.on("/edit", HTTP_POST, [](){ httpServer.send(200, "text/plain", ""); }, handleFileUpload);
+	httpServer.on("/set.cgi", HTTP_POST, handleSet);
 
-	httpServer.onNotFound(HandleNotFound);
+	httpServer.onNotFound(handleNotFound);
 
   httpServer.begin();
 
   Serial.println("Done with setup, entering main loop");
 
-	DumpStatusSet();
+	dumpStatusSet();
 }
 
 void loop()
@@ -463,7 +463,7 @@ void loop()
 
 		if (HC12ReadBuffer.startsWith("RS")) {
 			//Serial.println("Got Status Request");
-			SendStatus();
+			sendStatus();
 		}
 
     HC12ReadBuffer = "";
