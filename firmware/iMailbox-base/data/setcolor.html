@@ -76,7 +76,7 @@ function CheckAndSubmit() {
 					});
 			var currentColor = getParameterByName('currentColor');
 			if(currentColor != null) {
-				cp.setHex('#' + currentColor);
+				cp.setHex(currentColor);
 				var el = document.getElementById('currentColor');
 				el.value = currentColor;
 			}

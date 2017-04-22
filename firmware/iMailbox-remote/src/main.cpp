@@ -18,6 +18,7 @@ Arduino Pro Mini connections
 #include <Adafruit_NeoPixel.h>
 #include <Ticker.h>
 #include <SoftwareSerial.h>
+#include <LowPower.h>
 
 // pin for photocell
 #define LIGHTLEVELADC 14
@@ -25,20 +26,26 @@ Arduino Pro Mini connections
 #define BATTCHARGEGPIO 3
 #define BATTDONEGPIO 4
 #define BATTPGGPIO 5
+#define HC12RXGPIO 6
+#define HC12TXGPIO 7
 #define AUXINGPIO 8
 #define HC12SETGPIO 9
 #define PIXELGPIO 2
 #define NUMBER_OF_PIXELS 12
 
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUMBER_OF_PIXELS, PIXELGPIO, NEO_GRB + NEO_KHZ800);
-SoftwareSerial HC12(6, 7);
+SoftwareSerial HC12(HC12RXGPIO, HC12TXGPIO);
 
 byte ledState = HIGH;
 unsigned long timer = millis();                 // Delay Timer
+
 char HC12ByteIn;                                // Temporary variable
+char SerialByteIn;
 String HC12ReadBuffer = "";                     // Read/Write Buffer 1 for HC12
-boolean HC12End = false;                        // Flag to indiacte End of HC12 String
-boolean commandMode = false;                    // Send AT commands
+bool HC12End = false;                        // Flag to indiacte End of HC12 String
+String SerialReadBuffer = "";
+bool SerialEnd = false;
+
 uint8_t cmdPixel;
 uint8_t cmdLEDR = 0;
 uint8_t cmdLEDG = 255;
@@ -229,6 +236,40 @@ void dumpStatus() {
 	Serial.println(myStatus.brightness);
 }
 
+void dumpStatusSet() {
+	Serial.println("STATUS DUMP:");
+
+	Serial.print("SD* uptimeSeconds: ");
+	Serial.println(myStatusSet.uptimeSeconds);
+
+	Serial.print("SD* colorSingle: ");
+	Serial.println(myStatusSet.colorSingle);
+
+	Serial.print("SD* colorFade1: ");
+	Serial.println(myStatusSet.colorFade1);
+
+	Serial.print("SD* colorFade2: ");
+	Serial.println(myStatusSet.colorFade2);
+
+	Serial.print("SD* lightReading: ");
+	Serial.println(myStatusSet.lightReading);
+
+	Serial.print("SD* lightThreshold: ");
+	Serial.println(myStatusSet.lightThreshold);
+
+	Serial.print("SD* ledMode: ");
+	Serial.println(myStatusSet.ledMode);
+
+	Serial.print("SD* ledShow: ");
+	Serial.println(myStatusSet.ledShow);
+
+	Serial.print("SD* batteryStatus: ");
+	Serial.println(myStatusSet.batteryStatus);
+
+	Serial.print("SD* brightness: ");
+	Serial.println(myStatusSet.brightness);
+}
+
 void sendStatus() {
 	Serial.println("Sending status to base station");
   HC12.print("SS");
@@ -298,10 +339,11 @@ void updateRainbow() {
 
 void setFromStatus() {
 	modeNotOff = true;
+	runRainbow = false;
 	switch(myStatus.ledMode) {
 		case OFF:
 			modeNotOff = false;
-			setAllPixels(strip.Color(0, 0, 0));
+			strip.clear();
 			strip.show();
 			break;
 		case SINGLECOLOR:
@@ -317,13 +359,14 @@ void setFromStatus() {
 }
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(9600);
   delay(100);
 	Serial.println();
 	Serial.println();
   Serial.println("Begin setup");
 
   HC12ReadBuffer.reserve(64);
+	SerialReadBuffer.reserve(64);
 
 	pinMode(LED_BUILTIN, OUTPUT);
 
@@ -349,7 +392,7 @@ void setup() {
 	myStatus.lightReading = 0;
 	myStatus.lightThreshold = 400;
 	myStatus.ledMode = RGBFADE;
-	myStatus.ledShow = 0;
+	myStatus.ledShow = 1;
 	myStatus.batteryStatus = 0;
 	myStatus.brightness = 63;
 
@@ -378,9 +421,31 @@ void setup() {
 }
 
 void loop() {
+
+	// it's light out and light sensor is not overridden so let's sleep
+	if(!isDark && myStatus.ledShow == 0) {
+		Serial.println("Going to sleep");
+		strip.clear();
+		strip.show();
+		delay(1000);
+
+		// 8s is max for low.power lib, but with a 75 loops ~ 10mins
+		//for (int i = 0; i < 75; i++) {
+			// Enter power down state for 8 s with ADC and BOD module disabled
+	    LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
+		//}
+
+		Serial.println("Woke up, fetching status from base");
+		requestStatus();
+		// give base time to respond
+		delay(1000);
+	}
+
   statusTicker.update();
   uptimeTicker.update();
 	rainbowTicker.update();
+
+	// some serial stuff borrowed from https://www.allaboutcircuits.com/projects/understanding-and-implementing-the-hc-12-wireless-transceiver-module/
 
   while (HC12.available()) {                    // While Arduino's HC12 soft serial rx buffer has data
     HC12ByteIn = HC12.read();                   // Store each character from rx buffer in byteIn
@@ -388,6 +453,33 @@ void loop() {
     if (HC12ByteIn == '\n') {                   // At the end of the line
       HC12End = true;                           // Set HC12End flag to true
     }
+  }
+
+	while (Serial.available()) {                  // If Arduino's computer rx buffer has data
+    SerialByteIn = Serial.read();               // Store each character in byteIn
+    SerialReadBuffer += char(SerialByteIn);     // Write each character of byteIn to SerialReadBuffer
+    if (SerialByteIn == '\n') {                 // Check to see if at the end of the line
+      SerialEnd = true;                         // Set SerialEnd flag to indicate end of line
+    }
+  }
+
+  if (SerialEnd) {                              // Check to see if SerialEnd flag is true
+
+    if (SerialReadBuffer.startsWith("AT")) {    // Has a command been sent from local computer
+      HC12.print(SerialReadBuffer);             // Send local command to remote HC12 before changing settings
+      delay(100);                               //
+      digitalWrite(HC12SETGPIO, LOW);            // Enter command mode
+      delay(100);                               // Allow chip time to enter command mode
+      Serial.print(SerialReadBuffer);           // Echo command to serial
+      HC12.print(SerialReadBuffer);             // Send command to local HC12
+      delay(500);                               // Wait 0.5s for a response
+      digitalWrite(HC12SETGPIO, HIGH);           // Exit command / enter transparent mode
+      delay(100);                               // Delay before proceeding
+    } else {
+      HC12.print(SerialReadBuffer);             // Transmit non-command message
+    }
+    SerialReadBuffer = "";                      // Clear SerialReadBuffer
+    SerialEnd = false;                          // Reset serial end of line flag
   }
 
   if (HC12End) {                                // If HC12End flag is true
@@ -418,6 +510,8 @@ void loop() {
 				isFirstStatus = false;
 				sendStatus();
 			}
+			dumpStatusSet();
+			Serial.println("My status");
 			dumpStatus();
 		}
 
