@@ -1,6 +1,9 @@
 <html>
 <head><title>iMailbox</title>
 <link rel="stylesheet" type="text/css" href="style.css">
+<style>
+form { margin-bottom: 0px; }
+</style>
 <script type="text/javascript" src="140medley.min.js"></script>
 <script type="text/javascript">
 var xhr=j();
@@ -126,8 +129,6 @@ function CheckAndSubmit() {
 </script>
 </head>
 <body>
-<form method="POST" action="set.cgi">
-<input type="hidden" id="ledShow" name="ledShow" value="0">
 <div id="main">
 iMailbox
 <hr>
@@ -137,14 +138,18 @@ iMailbox
 <hr>
 <strong>Remote</strong><br>
 <strong>Uptime:</strong> <span id="uptimeSeconds">--</span><br>
-<strong>LED Mode:</strong> <span id="ledModeVal">--</span>&nbsp;<select id="ledMode" name="ledMode"></select><br>
-<strong>Light Sensor Override:</strong> <span id="ledShowVal">--</span>&nbsp;<input type="checkbox" id="ledShowCheck" name="ledShowCheck"><br>
-<strong>Brightness:</strong> <span id="brightnessVal">--</span>&nbsp;<input type="text" id="brightness" name="brightness" size="4"><br>
+<form method="POST" action="set.cgi"><strong>LED Mode:</strong> <span id="ledModeVal">--</span>&nbsp;<select id="ledMode" name="ledMode"></select>&nbsp;<input type="submit" value="Change"></form>
+<form method="POST" action="set.cgi"><input type="hidden" id="ledShow" name="ledShow" value="0">
+<strong>Light Sensor Override:</strong> <span id="ledShowVal">--</span>&nbsp;<input type="checkbox" id="ledShowCheck" name="ledShowCheck">&nbsp;<input type="submit" value="Change" onClick="CheckAndSubmit();">
+</form>
+<form method="POST" action="set.cgi">
+<strong>Brightness:</strong> <span id="brightnessVal">--</span>&nbsp;<input type="text" id="brightness" name="brightness" size="4">&nbsp;<input type="submit" value="Change"><br>
+</form>
 <strong>Light Reading:</strong> <span id="lightReading">--</span><br>
-<strong>Light Threshold:</strong> <span id="lightThresholdVal">--</span>&nbsp;<input type="text" id="lightThreshold" name="lightThreshold" size="4"><br>
+<form method="POST" action="set.cgi">
+<strong>Light Threshold:</strong> <span id="lightThresholdVal">--</span>&nbsp;<input type="text" id="lightThreshold" name="lightThreshold" size="4">&nbsp;<input type="submit" value="Change"><br>
+</form>
 <strong>Battery Status:</strong> <span id="batteryStatus">--</span><br>
-<br>
-<input type="submit" value="Change" onClick="CheckAndSubmit();">
 </div>
 </form>
 </body></html>

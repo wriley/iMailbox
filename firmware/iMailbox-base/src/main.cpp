@@ -333,8 +333,10 @@ void handleSet() {
 			uint8_t val = httpServer.arg(i).toInt();
 			Serial.print("Got value: ");
 			Serial.println(val);
-			remoteStatusSet.ledMode = val;
-			remoteStatus.ledMode = val;
+			if(val >= 0) {
+				remoteStatusSet.ledMode = val;
+				remoteStatus.ledMode = val;
+			}
 		} else if (arg == "currentColor") {
 			uint32_t val = httpServer.arg(i).toInt();
 			Serial.print("Got value: ");
@@ -345,20 +347,26 @@ void handleSet() {
 			uint8_t val = httpServer.arg(i).toInt();
 			Serial.print("Got value: ");
 			Serial.println(val);
-			remoteStatusSet.ledShow = val;
-			remoteStatus.ledShow = val;
+			if(val >= 0) {
+				remoteStatusSet.ledShow = val;
+				remoteStatus.ledShow = val;
+			}
 		} else if (arg == "brightness") {
 			uint16_t val = httpServer.arg(i).toInt();
 			Serial.print("Got value: ");
 			Serial.println(val);
-			remoteStatusSet.brightness = val;
-			remoteStatus.brightness = val;
+			if(val >= 0) {
+				remoteStatusSet.brightness = val;
+				remoteStatus.brightness = val;
+			}
 		} else if (arg == "lightThreshold") {
 			uint16_t val = httpServer.arg(i).toInt();
 			Serial.print("Got value: ");
 			Serial.println(val);
-			remoteStatusSet.lightThreshold = val;
-			remoteStatus.lightThreshold = val;
+			if(val >= 0) {
+				remoteStatusSet.lightThreshold = val;
+				remoteStatus.lightThreshold = val;
+			}
 		}
 		sendStatus();
 	}
@@ -425,10 +433,12 @@ void setup() {
 	httpServer.on("/edit", HTTP_DELETE, handleFileDelete);
 	httpServer.on("/edit", HTTP_POST, [](){ httpServer.send(200, "text/plain", ""); }, handleFileUpload);
 	httpServer.on("/set.cgi", HTTP_POST, handleSet);
-
 	httpServer.onNotFound(handleNotFound);
 
   httpServer.begin();
+
+	requestStatus();
+	delay(500);
 
   Serial.println("Done with setup, entering main loop");
 

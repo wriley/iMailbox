@@ -43,9 +43,9 @@ uint8_t cmdLEDR = 0;
 uint8_t cmdLEDG = 255;
 uint8_t cmdLEDB = 0;
 bool runRainbow = false;
-byte currentRainbow = 0;
+int8_t currentRainbow = 0;
 bool isDark = false;
-byte darkReadings = 0;
+int8_t darkReadings = 0;
 bool modeNotOff = false;
 bool isDisabled = false;
 bool isFirstStatus = false;
@@ -237,18 +237,24 @@ void requestStatus() {
 void statusCB() {
 	updateBatteryStatus();
 	updateLightReading();
-	if(myStatus.lightReading > myStatus.lightThreshold) {
+	if(myStatus.lightReading < myStatus.lightThreshold) {
 		darkReadings++;
+		if(darkReadings >= 5) {
+			isDark = true;
+			darkReadings = 5;
+		}
 	} else {
 		darkReadings--;
+		if(darkReadings <= 0) {
+			isDark = false;
+			darkReadings = 0;
+		}
 	}
-	if(darkReadings >= 5) {
-		isDark = true;
-		darkReadings = 5;
-	} else if(darkReadings <= 0) {
-		isDark = false;
-		darkReadings = 0;
-	}
+
+	Serial.print("darkReadings: ");
+	Serial.print(darkReadings);
+	Serial.print("  isDark: ");
+	Serial.println(isDark);
 	sendStatus();
 }
 
@@ -355,7 +361,7 @@ void setup() {
 	updateBatteryStatus();
 	updateLightReading();
 	setFromStatus();
-	requestStatus();
+	sendStatus();
 
 	//dumpStatus();
 
@@ -403,7 +409,7 @@ void loop() {
 				isFirstStatus = false;
 				sendStatus();
 			}
-			//dumpStatus();
+			dumpStatus();
 		}
 
 		if (HC12ReadBuffer.startsWith("RS")) {
