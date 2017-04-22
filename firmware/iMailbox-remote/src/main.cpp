@@ -8,6 +8,7 @@ Arduino Pro Mini connections
 
 6 HC-12 TX
 7 HC-12 RX
+8 aux input (mailbox door?)
 9 HC-12 Set
 
 14 Photocell (ADC)
@@ -24,12 +25,11 @@ Arduino Pro Mini connections
 #define BATTCHARGEGPIO 3
 #define BATTDONEGPIO 4
 #define BATTPGGPIO 5
+#define HC12SETGPIO 9
+#define PIXELGPIO 2
+#define NUMBER_OF_PIXELS 12
 
-const byte HC12SetPin = 9;
-const byte pixelPin = 2;
-const byte numPixels = 12;
-
-Adafruit_NeoPixel strip = Adafruit_NeoPixel(numPixels, pixelPin, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUMBER_OF_PIXELS, PIXELGPIO, NEO_GRB + NEO_KHZ800);
 SoftwareSerial HC12(6, 7);
 
 byte ledState = HIGH;
@@ -272,13 +272,13 @@ void incrementUptime() {
 }
 
 void setAllPixels(byte r, byte g, byte b) {
-	for(int i = 0; i < numPixels; i++) {
+	for(int i = 0; i < NUMBER_OF_PIXELS; i++) {
 		strip.setPixelColor(i, r, g, b);
 	}
 }
 
 void setAllPixels(uint32_t c) {
-	for(int i = 0; i < numPixels; i++) {
+	for(int i = 0; i < NUMBER_OF_PIXELS; i++) {
 		strip.setPixelColor(i, c);
 	}
 }
@@ -324,12 +324,12 @@ void setup() {
 	pinMode(BATTCHARGEGPIO, INPUT_PULLUP);
 	pinMode(BATTDONEGPIO, INPUT_PULLUP);
 	pinMode(BATTPGGPIO, INPUT_PULLUP);
-  pinMode(HC12SetPin, OUTPUT);                  // Output High for Transparent / Low for Command
-  pinMode(pixelPin, OUTPUT);
+  pinMode(HC12SETGPIO, OUTPUT);                  // Output High for Transparent / Low for Command
+  pinMode(PIXELGPIO, OUTPUT);
 
 	digitalWrite(LED_BUILTIN, ledState);
 
-  digitalWrite(HC12SetPin, HIGH);               // Enter Transparent mode
+  digitalWrite(HC12SETGPIO, HIGH);               // Enter Transparent mode
   delay(80);                                    // 80 ms delay before operation per datasheet
   HC12.begin(9600);                             // Open software serial port to HC12
 
@@ -383,11 +383,11 @@ void loop() {
 
   if (HC12End) {                                // If HC12End flag is true
     if (HC12ReadBuffer.startsWith("AT")) {      // Check to see if a command is received from remote
-      digitalWrite(HC12SetPin, LOW);            // Enter command mode
+      digitalWrite(HC12SETGPIO, LOW);            // Enter command mode
       delay(100);                               // Delay before sending command
 			HC12.print(HC12ReadBuffer);               // Write command to local HC12
       delay(500);                               // Wait 0.5 s for reply
-      digitalWrite(HC12SetPin, HIGH);           // Exit command / enter transparent mode
+      digitalWrite(HC12SETGPIO, HIGH);           // Exit command / enter transparent mode
       delay(100);                               // Delay before proceeding
     }
 
