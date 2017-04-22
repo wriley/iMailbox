@@ -354,7 +354,7 @@ void setup() {
 	myStatus.brightness = 63;
 
   statusTicker.setCallback(statusCB);
-  statusTicker.setInterval(10000);
+  statusTicker.setInterval(60000);
   statusTicker.start();
 
   uptimeTicker.setCallback(incrementUptime);
