@@ -1,6 +1,11 @@
 # iMailbox
 
-Mailbox lights using an Adafruit Huzzah and WS2812 LEDs
+Mailbox lights using a base station and remote communicating via HC-12 serial link
 
-Built with:
-https://github.com/boseji/ESP8266-uof-windows-sdk-portable
+base
+
+NodeMCU v1
+
+remote
+
+Arduino Pro Mini
