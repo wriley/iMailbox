@@ -1,6 +1,6 @@
 /*
 
-NOdeMCU connections
+NodeMCU connections
 4 	HC-12 set
 12 	HC-12 Tx
 14 	HC-12 Rx
