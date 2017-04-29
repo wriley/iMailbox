@@ -19,6 +19,8 @@ Arduino Pro Mini connections
 #include <Ticker.h>
 #include <SoftwareSerial.h>
 #include <LowPower.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
 
 // pin for photocell
 #define LIGHTLEVELADC 14
@@ -32,9 +34,14 @@ Arduino Pro Mini connections
 #define HC12SETGPIO 9
 #define PIXELGPIO 2
 #define NUMBER_OF_PIXELS 12
+// pin for DS1820
+#define ONEWIREGPIO 13
 
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUMBER_OF_PIXELS, PIXELGPIO, NEO_GRB + NEO_KHZ800);
 SoftwareSerial HC12(HC12RXGPIO, HC12TXGPIO);
+
+OneWire oneWire(ONEWIREGPIO);
+DallasTemperature sensors(&oneWire);
 
 byte ledState = HIGH;
 unsigned long timer = millis();                 // Delay Timer
@@ -57,6 +64,7 @@ int8_t darkReadings = 0;
 bool modeNotOff = false;
 bool isDisabled = false;
 bool isFirstStatus = false;
+float tempF;
 
 Ticker statusTicker;
 Ticker uptimeTicker;
@@ -74,6 +82,7 @@ struct __attribute__((aligned(4))) iMailboxStatus {
 	uint8_t ledShow;
 	uint8_t batteryStatus;
 	uint8_t brightness;
+	float ambientTemp;
 };
 
 iMailboxStatus myStatus;
@@ -130,6 +139,18 @@ void updateAuxInputStatus() {
 	myStatus.auxInput = !digitalRead(AUXINGPIO);
 	Serial.print("auxInput: ");
 	Serial.println(myStatus.auxInput);
+}
+
+void updateAmbientTemp() {
+	Serial.print("Requesting temperature...");
+	sensors.requestTemperatures();
+	Serial.println("DONE");
+
+	Serial.print("Temperature for the device 1 (index 0) is: ");
+	tempF = DallasTemperature::toFahrenheit(sensors.getTempCByIndex(0));
+	myStatus.ambientTemp = tempF;
+	Serial.print(tempF);
+	Serial.println("F");
 }
 
 // Fill the dots one after the other with a color
@@ -234,6 +255,12 @@ void dumpStatus() {
 
 	Serial.print("SD* brightness: ");
 	Serial.println(myStatus.brightness);
+
+	Serial.print("SD* ambientTemp: ");
+	Serial.println(myStatus.ambientTemp);
+
+	Serial.print("SD* auxInput: ");
+	Serial.println(myStatus.auxInput);
 }
 
 void dumpStatusSet() {
@@ -268,6 +295,12 @@ void dumpStatusSet() {
 
 	Serial.print("SD* brightness: ");
 	Serial.println(myStatusSet.brightness);
+
+	Serial.print("SD* ambientTemp: ");
+	Serial.println(myStatusSet.ambientTemp);
+
+	Serial.print("SD* auxInput: ");
+	Serial.println(myStatusSet.auxInput);
 }
 
 void sendStatus() {
@@ -285,6 +318,9 @@ void requestStatus() {
 void statusCB() {
 	updateBatteryStatus();
 	updateLightReading();
+	updateAuxInputStatus();
+	updateAmbientTemp();
+
 	if(myStatus.lightReading < myStatus.lightThreshold) {
 		darkReadings++;
 		if(darkReadings >= 5) {
@@ -407,11 +443,13 @@ void setup() {
 	rainbowTicker.setCallback(updateRainbow);
   rainbowTicker.setInterval(200);
 
+	sensors.begin();
+
   strip.begin();
   strip.show();
 
-	updateBatteryStatus();
-	updateLightReading();
+	statusCB();
+
 	setFromStatus();
 	sendStatus();
 

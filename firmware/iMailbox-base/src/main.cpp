@@ -54,6 +54,7 @@ struct __attribute__((aligned(4))) iMailboxStatus {
 	uint8_t ledShow;
 	uint8_t batteryStatus;
 	uint8_t brightness;
+	float ambientTemp;
 };
 
 iMailboxStatus remoteStatus;
@@ -136,6 +137,9 @@ void dumpStatus() {
 
 	Serial.print("SD* brightness: ");
 	Serial.println(remoteStatus.brightness);
+
+	Serial.print("SD* ambientTemp: ");
+	Serial.println(remoteStatus.ambientTemp);
 }
 
 void dumpStatusSet() {
@@ -170,6 +174,9 @@ void dumpStatusSet() {
 
 	Serial.print("SD* brightness: ");
 	Serial.println(remoteStatusSet.brightness);
+
+	Serial.print("SD* ambientTemp: ");
+	Serial.println(remoteStatusSet.ambientTemp);
 }
 
 void sendStatus() {
