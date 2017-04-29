@@ -263,6 +263,8 @@ void dumpStatus() {
 
 	Serial.print("SD* ambientTemp: ");
 	Serial.println(myStatus.ambientTemp);
+
+	Serial.println();
 }
 
 void dumpStatusSet() {
@@ -303,6 +305,8 @@ void dumpStatusSet() {
 
 	Serial.print("SD* ambientTemp: ");
 	Serial.println(myStatusSet.ambientTemp);
+
+	Serial.println();
 }
 
 void sendStatus() {
@@ -465,6 +469,7 @@ void setup() {
 	// we just started up, is it dark out?
 	if(myStatus.lightReading < myStatus.lightThreshold) {
 		isDark = true;
+		darkReadings = 5;
 	}
 
 	setFromStatus();

@@ -144,6 +144,8 @@ void dumpStatus() {
 
 	Serial.print("SD* ambientTemp: ");
 	Serial.println(remoteStatus.ambientTemp);
+
+	Serial.println();
 }
 
 void dumpStatusSet() {
@@ -184,6 +186,8 @@ void dumpStatusSet() {
 
 	Serial.print("SD* ambientTemp: ");
 	Serial.println(remoteStatusSet.ambientTemp);
+
+	Serial.println();
 }
 
 void sendStatus() {
