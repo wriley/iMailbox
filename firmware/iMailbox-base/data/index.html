@@ -13,6 +13,10 @@ var ledShowArray=["Off","On"];
 
 var ledMode = 0;
 
+function tempConvert(t) {
+	return t / 100;
+}
+
 function updateInfo() {
 	xhr.open("GET", "/status", true);
 	xhr.timeout = 5000;
@@ -61,6 +65,12 @@ function updateInfo() {
 			} else {
 				statusDiv.innerHTML=batteryStatusArray[data.batteryStatus];
 			}
+
+			var statusDiv=document.getElementById("auxInput");
+			statusDiv.innerHTML=data.auxInput;
+
+			var statusDiv=document.getElementById("ambientTemp");
+			statusDiv.innerHTML=tempConvert(data.ambientTemp) + "F";
 
 			var el = document.getElementById("currentColorLink");
 			if(el != null) {
@@ -155,6 +165,8 @@ iMailbox
 <strong>Light Threshold:</strong> <span id="lightThresholdVal">--</span>&nbsp;<input type="text" id="lightThreshold" name="lightThreshold" size="4">&nbsp;<input type="submit" value="Change"><br>
 </form>
 <strong>Battery Status:</strong> <span id="batteryStatus">--</span><br>
+<strong>Auxiliary Input:</strong> <span id="auxInput">--</span><br>
+<strong>Ambient Temperature:</strong> <span id="ambientTemp">--</span><br>
 <br>
 <a id="currentColorLink" href="setcolor.html">Set LED Color</a>
 </div>

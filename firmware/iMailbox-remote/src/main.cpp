@@ -35,7 +35,7 @@ Arduino Pro Mini connections
 #define PIXELGPIO 2
 #define NUMBER_OF_PIXELS 12
 // pin for DS1820
-#define ONEWIREGPIO 13
+#define ONEWIREGPIO 10
 
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUMBER_OF_PIXELS, PIXELGPIO, NEO_GRB + NEO_KHZ800);
 SoftwareSerial HC12(HC12RXGPIO, HC12TXGPIO);
@@ -82,7 +82,8 @@ struct __attribute__((aligned(4))) iMailboxStatus {
 	uint8_t ledShow;
 	uint8_t batteryStatus;
 	uint8_t brightness;
-	float ambientTemp;
+	uint8_t dummy;
+	uint16_t ambientTemp;
 };
 
 iMailboxStatus myStatus;
@@ -148,7 +149,7 @@ void updateAmbientTemp() {
 
 	Serial.print("Temperature for the device 1 (index 0) is: ");
 	tempF = DallasTemperature::toFahrenheit(sensors.getTempCByIndex(0));
-	myStatus.ambientTemp = tempF;
+	myStatus.ambientTemp = (uint16_t)(tempF * 100);
 	Serial.print(tempF);
 	Serial.println("F");
 }
@@ -256,11 +257,11 @@ void dumpStatus() {
 	Serial.print("SD* brightness: ");
 	Serial.println(myStatus.brightness);
 
-	Serial.print("SD* ambientTemp: ");
-	Serial.println(myStatus.ambientTemp);
-
 	Serial.print("SD* auxInput: ");
 	Serial.println(myStatus.auxInput);
+
+	Serial.print("SD* ambientTemp: ");
+	Serial.println(myStatus.ambientTemp);
 }
 
 void dumpStatusSet() {
@@ -296,15 +297,16 @@ void dumpStatusSet() {
 	Serial.print("SD* brightness: ");
 	Serial.println(myStatusSet.brightness);
 
-	Serial.print("SD* ambientTemp: ");
-	Serial.println(myStatusSet.ambientTemp);
-
 	Serial.print("SD* auxInput: ");
 	Serial.println(myStatusSet.auxInput);
+
+	Serial.print("SD* ambientTemp: ");
+	Serial.println(myStatusSet.ambientTemp);
 }
 
 void sendStatus() {
 	Serial.println("Sending status to base station");
+	dumpStatus();
   HC12.print("SS");
   HC12.write((char *)&myStatus, sizeof(iMailboxStatus));
   HC12.println();
@@ -448,7 +450,10 @@ void setup() {
   strip.begin();
   strip.show();
 
-	statusCB();
+	updateBatteryStatus();
+	updateLightReading();
+	updateAuxInputStatus();
+	updateAmbientTemp();
 
 	setFromStatus();
 	sendStatus();
