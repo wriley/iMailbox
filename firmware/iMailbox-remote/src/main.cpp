@@ -22,9 +22,7 @@ Arduino Pro Mini connections
 #include <OneWire.h>
 #include <DallasTemperature.h>
 
-// pin for photocell
-#define LIGHTLEVELADC 14
-// pins for battery status from solar charge controller
+#define PIXELGPIO 2
 #define BATTCHARGEGPIO 3
 #define BATTDONEGPIO 4
 #define BATTPGGPIO 5
@@ -32,10 +30,11 @@ Arduino Pro Mini connections
 #define HC12TXGPIO 7
 #define AUXINGPIO 8
 #define HC12SETGPIO 9
-#define PIXELGPIO 2
-#define NUMBER_OF_PIXELS 12
-// pin for DS1820
 #define ONEWIREGPIO 10
+#define LIGHTLEVELGPIO 14
+
+#define NUMBER_OF_PIXELS 12
+
 
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUMBER_OF_PIXELS, PIXELGPIO, NEO_GRB + NEO_KHZ800);
 SoftwareSerial HC12(HC12RXGPIO, HC12TXGPIO);
@@ -44,15 +43,14 @@ OneWire oneWire(ONEWIREGPIO);
 DallasTemperature sensors(&oneWire);
 
 byte ledState = HIGH;
-unsigned long timer = millis();                 // Delay Timer
+unsigned long timer = millis();
 
-char HC12ByteIn;                                // Temporary variable
+char HC12ByteIn;
 char SerialByteIn;
-String HC12ReadBuffer = "";                     // Read/Write Buffer 1 for HC12
-bool HC12End = false;                        // Flag to indiacte End of HC12 String
+String HC12ReadBuffer = "";
+bool HC12End = false;
 String SerialReadBuffer = "";
 bool SerialEnd = false;
-
 uint8_t cmdPixel;
 uint8_t cmdLEDR = 0;
 uint8_t cmdLEDG = 255;
@@ -65,29 +63,26 @@ bool modeNotOff = false;
 bool isDisabled = false;
 bool isFirstStatus = false;
 float tempF;
-
 Ticker statusTicker;
 Ticker uptimeTicker;
 Ticker rainbowTicker;
 
-struct __attribute__((aligned(4))) iMailboxStatus {
+// structs and enums
+// must match between base and remote
+struct iMailboxStatus {
 	uint32_t uptimeSeconds;
 	uint32_t colorSingle;
 	uint32_t colorFade1;
 	uint32_t colorFade2;
 	uint16_t lightReading;
 	uint16_t lightThreshold;
+	uint16_t ambientTemp;
 	uint8_t auxInput;
 	uint8_t ledMode;
 	uint8_t ledShow;
 	uint8_t batteryStatus;
 	uint8_t brightness;
-	uint8_t dummy;
-	uint16_t ambientTemp;
 };
-
-iMailboxStatus myStatus;
-iMailboxStatus myStatusSet;
 
 typedef enum {
 	ONBATTERY,
@@ -105,6 +100,12 @@ typedef enum {
 	COLORFADE1,
 	COLORFADE2
 } led_mode_t;
+
+// end structs and enums
+
+// custom typed global variables
+iMailboxStatus myStatus;
+iMailboxStatus myStatusSet;
 
 // Input a value 0 to 255 to get a color value.
 // The colours are a transition r - g - b - back to r.
@@ -131,7 +132,7 @@ void updateBatteryStatus() {
 }
 
 void updateLightReading() {
-	myStatus.lightReading = analogRead(LIGHTLEVELADC);
+	myStatus.lightReading = analogRead(LIGHTLEVELGPIO);
 	Serial.print("lightReading: ");
 	Serial.println(myStatus.lightReading);
 }
@@ -317,12 +318,7 @@ void requestStatus() {
 	HC12.println("RS");
 }
 
-void statusCB() {
-	updateBatteryStatus();
-	updateLightReading();
-	updateAuxInputStatus();
-	updateAmbientTemp();
-
+void checkDark() {
 	if(myStatus.lightReading < myStatus.lightThreshold) {
 		darkReadings++;
 		if(darkReadings >= 5) {
@@ -341,6 +337,16 @@ void statusCB() {
 	Serial.print(darkReadings);
 	Serial.print("  isDark: ");
 	Serial.println(isDark);
+}
+
+void statusCB() {
+	updateBatteryStatus();
+	updateLightReading();
+	updateAuxInputStatus();
+	updateAmbientTemp();
+
+	checkDark();
+
 	sendStatus();
 }
 
@@ -396,6 +402,7 @@ void setFromStatus() {
 	strip.setBrightness(myStatus.brightness);
 }
 
+// main setup
 void setup() {
   Serial.begin(9600);
   delay(100);
@@ -414,14 +421,14 @@ void setup() {
 	pinMode(BATTPGGPIO, INPUT_PULLUP);
 	pinMode(AUXINGPIO, INPUT_PULLUP);
 	// setup GPIO outputs
-  pinMode(HC12SETGPIO, OUTPUT);                  // Output High for Transparent / Low for Command
+  pinMode(HC12SETGPIO, OUTPUT);
   pinMode(PIXELGPIO, OUTPUT);
 
 	digitalWrite(LED_BUILTIN, ledState);
 
-  digitalWrite(HC12SETGPIO, HIGH);               // Enter Transparent mode
-  delay(80);                                    // 80 ms delay before operation per datasheet
-  HC12.begin(9600);                             // Open software serial port to HC12
+  digitalWrite(HC12SETGPIO, HIGH);
+  delay(80);
+  HC12.begin(9600);
 
   myStatus.uptimeSeconds = 0;
 	myStatus.colorSingle = 0x0000ff00;
@@ -430,7 +437,7 @@ void setup() {
 	myStatus.lightReading = 0;
 	myStatus.lightThreshold = 400;
 	myStatus.ledMode = RGBFADE;
-	myStatus.ledShow = 1;
+	myStatus.ledShow = 0;
 	myStatus.batteryStatus = 0;
 	myStatus.brightness = 63;
 
@@ -455,6 +462,11 @@ void setup() {
 	updateAuxInputStatus();
 	updateAmbientTemp();
 
+	// we just started up, is it dark out?
+	if(myStatus.lightReading < myStatus.lightThreshold) {
+		isDark = true;
+	}
+
 	setFromStatus();
 	sendStatus();
 
@@ -463,9 +475,9 @@ void setup() {
   Serial.println("Setup done, entering main loop");
 }
 
+// main loop
 void loop() {
-
-	// it's light out and light sensor is not overridden so let's sleep
+		// it's light out and light sensor is not overridden so let's sleep
 	if(!isDark && myStatus.ledShow == 0) {
 		Serial.println("Going to sleep");
 		strip.clear();
@@ -479,60 +491,62 @@ void loop() {
 		//}
 
 		Serial.println("Woke up, fetching status from base");
+		updateLightReading();
+		checkDark();
 		requestStatus();
 		// give base time to respond
 		delay(1000);
 	}
 
-  statusTicker.update();
-  uptimeTicker.update();
+	statusTicker.update();
+	uptimeTicker.update();
 	rainbowTicker.update();
 
 	// some serial stuff borrowed from https://www.allaboutcircuits.com/projects/understanding-and-implementing-the-hc-12-wireless-transceiver-module/
 
-  while (HC12.available()) {                    // While Arduino's HC12 soft serial rx buffer has data
-    HC12ByteIn = HC12.read();                   // Store each character from rx buffer in byteIn
-    HC12ReadBuffer += char(HC12ByteIn);         // Write each character of byteIn to HC12ReadBuffer
-    if (HC12ByteIn == '\n') {                   // At the end of the line
-      HC12End = true;                           // Set HC12End flag to true
+  while (HC12.available()) {
+    HC12ByteIn = HC12.read();
+    HC12ReadBuffer += char(HC12ByteIn);
+    if (HC12ByteIn == '\n') {
+      HC12End = true;
     }
   }
 
-	while (Serial.available()) {                  // If Arduino's computer rx buffer has data
-    SerialByteIn = Serial.read();               // Store each character in byteIn
-    SerialReadBuffer += char(SerialByteIn);     // Write each character of byteIn to SerialReadBuffer
-    if (SerialByteIn == '\n') {                 // Check to see if at the end of the line
-      SerialEnd = true;                         // Set SerialEnd flag to indicate end of line
+	while (Serial.available()) {
+    SerialByteIn = Serial.read();
+    SerialReadBuffer += char(SerialByteIn);
+    if (SerialByteIn == '\n') {
+      SerialEnd = true;
     }
   }
 
-  if (SerialEnd) {                              // Check to see if SerialEnd flag is true
+  if (SerialEnd) {
 
-    if (SerialReadBuffer.startsWith("AT")) {    // Has a command been sent from local computer
-      HC12.print(SerialReadBuffer);             // Send local command to remote HC12 before changing settings
-      delay(100);                               //
-      digitalWrite(HC12SETGPIO, LOW);            // Enter command mode
-      delay(100);                               // Allow chip time to enter command mode
-      Serial.print(SerialReadBuffer);           // Echo command to serial
-      HC12.print(SerialReadBuffer);             // Send command to local HC12
-      delay(500);                               // Wait 0.5s for a response
-      digitalWrite(HC12SETGPIO, HIGH);           // Exit command / enter transparent mode
-      delay(100);                               // Delay before proceeding
+    if (SerialReadBuffer.startsWith("AT")) {
+      HC12.print(SerialReadBuffer);
+      delay(100);
+      digitalWrite(HC12SETGPIO, LOW);
+      delay(100);
+      Serial.print(SerialReadBuffer);
+      HC12.print(SerialReadBuffer);
+      delay(500);
+      digitalWrite(HC12SETGPIO, HIGH);
+      delay(100);
     } else {
-      HC12.print(SerialReadBuffer);             // Transmit non-command message
+      HC12.print(SerialReadBuffer);
     }
-    SerialReadBuffer = "";                      // Clear SerialReadBuffer
-    SerialEnd = false;                          // Reset serial end of line flag
+    SerialReadBuffer = "";
+    SerialEnd = false;
   }
 
-  if (HC12End) {                                // If HC12End flag is true
-    if (HC12ReadBuffer.startsWith("AT")) {      // Check to see if a command is received from remote
-      digitalWrite(HC12SETGPIO, LOW);            // Enter command mode
-      delay(100);                               // Delay before sending command
-			HC12.print(HC12ReadBuffer);               // Write command to local HC12
-      delay(500);                               // Wait 0.5 s for reply
-      digitalWrite(HC12SETGPIO, HIGH);           // Exit command / enter transparent mode
-      delay(100);                               // Delay before proceeding
+  if (HC12End) {
+    if (HC12ReadBuffer.startsWith("AT")) {
+      digitalWrite(HC12SETGPIO, LOW);
+      delay(100);
+			HC12.print(HC12ReadBuffer);
+      delay(500);
+      digitalWrite(HC12SETGPIO, HIGH);
+      delay(100);
     }
 
     if (HC12ReadBuffer.startsWith("SS")) {
@@ -563,8 +577,8 @@ void loop() {
 			sendStatus();
 		}
 
-    HC12ReadBuffer = "";                        // Empty buffer
-    HC12End = false;                            // Reset flag
+    HC12ReadBuffer = "";
+    HC12End = false;
   }
 
   // Control logic

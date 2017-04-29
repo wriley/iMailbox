@@ -15,51 +15,39 @@ NodeMCU connections
 #include <ESP8266HTTPUpdateServer.h>
 #include <FS.h>
 #include <ArduinoJson.h>
-
 #include "config.h"
 
 #define HC12RXGPIO 12
 #define HC12TXGPIO 14
 #define HC12SETGPIO 4
 
-SoftwareSerial HC12(HC12RXGPIO, HC12TXGPIO);
-
-char HC12ByteIn;                                // Temporary variable
+char HC12ByteIn;
 char SerialByteIn;
-String HC12ReadBuffer = "";                     // Read/Write Buffer 1 for HC12
-bool HC12End = false;                        // Flag to indiacte End of HC12 String
+String HC12ReadBuffer = "";
+bool HC12End = false;
 String SerialReadBuffer = "";
 bool SerialEnd = false;
-
 uint32_t uptimeSeconds;
 byte ledState = HIGH;
 File fsUploadFile;
 uint32_t lastStatus = 0;
 
-WiFiClient espClient;
-Ticker uptimeTicker;
-
-ESP8266WebServer httpServer(80);
-ESP8266HTTPUpdateServer httpUpdater;
-
-struct __attribute__((aligned(4))) iMailboxStatus {
+// structs and enums
+// must match between base and remote
+struct iMailboxStatus {
 	uint32_t uptimeSeconds;
 	uint32_t colorSingle;
 	uint32_t colorFade1;
 	uint32_t colorFade2;
 	uint16_t lightReading;
 	uint16_t lightThreshold;
+	uint16_t ambientTemp;
 	uint8_t auxInput;
 	uint8_t ledMode;
 	uint8_t ledShow;
 	uint8_t batteryStatus;
 	uint8_t brightness;
-	uint8_t dummy;
-	uint16_t ambientTemp;
 };
-
-iMailboxStatus remoteStatus;
-iMailboxStatus remoteStatusSet;
 
 typedef enum {
 	ONBATTERY,
@@ -78,6 +66,18 @@ typedef enum {
 	COLORFADE2
 } led_mode_t;
 
+// end struct and enum
+
+// global variables
+SoftwareSerial HC12(HC12RXGPIO, HC12TXGPIO);
+WiFiClient espClient;
+Ticker uptimeTicker;
+ESP8266WebServer httpServer(80);
+ESP8266HTTPUpdateServer httpUpdater;
+iMailboxStatus remoteStatus;
+iMailboxStatus remoteStatusSet;
+
+// functions
 void toggleLED() {
 	if(ledState == LOW)
 		ledState = HIGH;
@@ -411,6 +411,8 @@ void handleSet() {
 	send302("/");
 }
 
+
+// main setup
 void setup() {
   Serial.begin(9600);
   delay(100);
@@ -489,6 +491,7 @@ void setup() {
 	dumpStatusSet();
 }
 
+// main loop
 void loop()
 {
 	uptimeTicker.update();
@@ -503,31 +506,32 @@ void loop()
     }
   }
 
-	while (Serial.available()) {                  // If Arduino's computer rx buffer has data
-    SerialByteIn = Serial.read();               // Store each character in byteIn
-    SerialReadBuffer += char(SerialByteIn);     // Write each character of byteIn to SerialReadBuffer
-    if (SerialByteIn == '\n') {                 // Check to see if at the end of the line
-      SerialEnd = true;                         // Set SerialEnd flag to indicate end of line
+	// some serial stuff borrowed from https://www.allaboutcircuits.com/projects/understanding-and-implementing-the-hc-12-wireless-transceiver-module/
+	while (Serial.available()) {
+    SerialByteIn = Serial.read();
+    SerialReadBuffer += char(SerialByteIn);
+    if (SerialByteIn == '\n') {
+      SerialEnd = true;
     }
   }
 
-  if (SerialEnd) {                              // Check to see if SerialEnd flag is true
+  if (SerialEnd) {
 
-    if (SerialReadBuffer.startsWith("AT")) {    // Has a command been sent from local computer
-      HC12.print(SerialReadBuffer);             // Send local command to remote HC12 before changing settings
-      delay(100);                               //
-      digitalWrite(HC12SETGPIO, LOW);            // Enter command mode
-      delay(100);                               // Allow chip time to enter command mode
-      Serial.print(SerialReadBuffer);           // Echo command to serial
-      HC12.print(SerialReadBuffer);             // Send command to local HC12
-      delay(500);                               // Wait 0.5s for a response
-      digitalWrite(HC12SETGPIO, HIGH);           // Exit command / enter transparent mode
-      delay(100);                               // Delay before proceeding
+    if (SerialReadBuffer.startsWith("AT")) {
+      HC12.print(SerialReadBuffer);
+      delay(100);
+      digitalWrite(HC12SETGPIO, LOW);
+      delay(100);
+      Serial.print(SerialReadBuffer);
+      HC12.print(SerialReadBuffer);
+      delay(500);
+      digitalWrite(HC12SETGPIO, HIGH);
+      delay(100);
     } else {
-      HC12.print(SerialReadBuffer);             // Transmit non-command message
+      HC12.print(SerialReadBuffer);
     }
-    SerialReadBuffer = "";                      // Clear SerialReadBuffer
-    SerialEnd = false;                          // Reset serial end of line flag
+    SerialReadBuffer = "";
+    SerialEnd = false;
   }
 
   if (HC12End) {
