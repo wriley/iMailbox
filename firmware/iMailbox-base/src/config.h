@@ -11,8 +11,8 @@
 #define TCPSERVERPORT       10051
 #define WSGPIO              2
 #define WSPIXELS            12
-#define UPDATE_PATH "/firmware"
-#define UPDATE_USERNAME  "admin"
-#define UPDATE_PASSWORD  "admin"
+#define UPDATE_PATH         "/firmware"
+#define UPDATE_USERNAME     "admin"
+#define UPDATE_PASSWORD     "admin"
 
 #endif
