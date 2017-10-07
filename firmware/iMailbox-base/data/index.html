@@ -87,9 +87,6 @@
                 var el = document.getElementById("currentColorBox");
                 el.style.backgroundColor = "#"+data.colorSingle.toString(16).padStart(6, '0');
                 
-                var el = document.getElementById("ledMode");
-                el.selectedIndex = data.ledMode;
-
 				window.setTimeout(updateInfo, 5000);
 			}
 		}
