@@ -83,6 +83,12 @@
 				if(data.ledShow == 1) {
 					el.checked = true;
 				}
+                
+                var el = document.getElementById("currentColorBox");
+                el.style.backgroundColor = "#"+data.colorSingle.toString(16).padStart(6, '0');
+                
+                var el = document.getElementById("ledMode");
+                el.selectedIndex = data.ledMode;
 
 				window.setTimeout(updateInfo, 5000);
 			}
@@ -125,9 +131,6 @@
 			var opt = document.createElement('option');
 			opt.value = i;
 			opt.innerHTML = ledModeArray[i];
-			if(i == ledMode) {
-				opt.selected = true;
-			}
 			el.appendChild(opt);
 		}
 	}
@@ -175,7 +178,10 @@
 		<strong>Auxiliary Input:</strong> <span id="auxInput">--</span><br>
 		<strong>Ambient Temperature:</strong> <span id="ambientTemp">--</span><br>
 		<br>
-		<a id="currentColorLink" href="setcolor.html">Set LED Color</a>
+        <div class="input-color">
+            <a id="currentColorLink" href="setcolor.html">Set LED Color</a>
+            <div class="color-box" id="currentColorBox" style="background-color: #000000;"></div>
+        </div>
 	</div>
 </form>
 </body></html>

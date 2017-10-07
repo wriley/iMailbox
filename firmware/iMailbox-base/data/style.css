@@ -26,3 +26,19 @@ body {
 .solar {
 	color: #c9c900;
 }
+
+.input-color {
+    position: relative;
+}
+.input-color a {
+    padding-left: 20px;
+}
+.input-color .color-box {
+    width: 15px;
+    height: 15px;
+    display: inline-block;
+    background-color: #ccc;
+    position: absolute;
+    left: 5px;
+    top: 0px;
+}
