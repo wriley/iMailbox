@@ -1,181 +1,181 @@
 <html>
 <head><title>iMailbox</title>
-<link rel="stylesheet" type="text/css" href="style.css">
-<style>
-form { margin-bottom: 0px; }
-</style>
-<script type="text/javascript" src="140medley.min.js"></script>
-<script type="text/javascript">
-var xhr=j();
-var batteryStatusArray=["On Battery","Low Battery","Unknown","Unknown","On Solar","Charging","Charge Complete","Temperature or Timer Fault"];
-var ledModeArray=["Off","Single Color","RGB Fade"];
-var ledShowArray=["Off","On"];
+	<link rel="stylesheet" type="text/css" href="style.css">
+	<style>
+	form { margin-bottom: 0px; }
+	</style>
+	<script type="text/javascript" src="140medley.min.js"></script>
+	<script type="text/javascript">
+	var xhr=j();
+	var batteryStatusArray=["On Battery","Low Battery","Unknown","Unknown","On Solar","Charging","Charge Complete","Temperature or Timer Fault"];
+	var ledModeArray=["Off","Single Color","RGB Fade"];
+	var ledShowArray=["Off","On"];
 
-var ledMode = 0;
+	var ledMode = 0;
 
-function tempConvert(t) {
-	return t / 100;
-}
-
-function updateInfo() {
-	xhr.open("GET", "/status", true);
-	xhr.timeout = 5000;
-	xhr.ontimeout = function() {
-		console.log("Timed out getting status, will retry in 10 seconds");
-		window.setTimeout(updateInfo, 10000);
+	function tempConvert(t) {
+		return t / 100;
 	}
-	xhr.onreadystatechange=function() {
-		if (xhr.readyState==4 && xhr.status>=200 && xhr.status<300) {
-			var data=JSON.parse(xhr.responseText);
 
-			var statusDiv=document.getElementById("uptimeSeconds");
-			statusDiv.innerHTML=secondsToDateString(data.uptimeSeconds);
-
-			var statusDiv=document.getElementById("freeHeap");
-			statusDiv.innerHTML=numberWithCommas(data.freeHeap) +" bytes";
-
-			var statusDiv=document.getElementById("lastCheckInTime");
-			if(data.lastStatus > -1) {
-				statusDiv.innerHTML="Remote checked in "+secondsToDateString(data.lastStatus/1000)+" ago";
-			}
-
-			var statusDiv=document.getElementById("uptimeSecondsBase");
-			statusDiv.innerHTML=secondsToDateString(data.uptimeSecondsBase);
-
-			var statusDiv=document.getElementById("ledModeVal");
-			statusDiv.innerHTML=ledModeArray[data.ledMode];
-
-			var statusDiv=document.getElementById("ledShowVal");
-			statusDiv.innerHTML=ledShowArray[data.ledShow];
-
-			var statusDiv=document.getElementById("lightReading");
-			statusDiv.innerHTML=data.lightReading;
-
-			var statusDiv=document.getElementById("lightThresholdVal");
-			statusDiv.innerHTML=data.lightThreshold;
-
-			var statusDiv=document.getElementById("brightnessVal");
-			statusDiv.innerHTML=data.brightness;
-
-			var statusDiv=document.getElementById("batteryStatus");
-			if(data.batteryStatus == 1 || data.batteryStatus == 7) {
-				statusDiv.innerHTML="<font class=\"error\">"+batteryStatusArray[data.batteryStatus]+"</font>";
-			} else if(data.batteryStatus == 6) {
-				statusDiv.innerHTML="<font class=\"good\">"+batteryStatusArray[data.batteryStatus]+"</font>";
-			} else if(data.batteryStatus == 4) {
-				statusDiv.innerHTML="<font class=\"solar\">"+batteryStatusArray[data.batteryStatus]+"</font>";
-			} else {
-				statusDiv.innerHTML=batteryStatusArray[data.batteryStatus];
-			}
-
-			var statusDiv=document.getElementById("auxInput");
-			statusDiv.innerHTML=data.auxInput;
-
-			var statusDiv=document.getElementById("ambientTemp");
-			statusDiv.innerHTML=tempConvert(data.ambientTemp) + "F";
-
-			var el = document.getElementById("currentColorLink");
-			if(el != null) {
-				el.setAttribute("href", "setcolor.html?currentColor=" + data.colorSingle.toString(16).padStart(6, '0'));
-			}
-
-			var el = document.getElementById("ledShowCheck");
-			if(data.ledShow == 1) {
-				el.checked = true;
-			}
-
-			window.setTimeout(updateInfo, 5000);
+	function updateInfo() {
+		xhr.open("GET", "/status", true);
+		xhr.timeout = 5000;
+		xhr.ontimeout = function() {
+			console.log("Timed out getting status, will retry in 10 seconds");
+			window.setTimeout(updateInfo, 10000);
 		}
+		xhr.onreadystatechange=function() {
+			if (xhr.readyState==4 && xhr.status>=200 && xhr.status<300) {
+				var data=JSON.parse(xhr.responseText);
+
+				var statusDiv=document.getElementById("uptimeSeconds");
+				statusDiv.innerHTML=secondsToDateString(data.uptimeSeconds);
+
+				var statusDiv=document.getElementById("freeHeap");
+				statusDiv.innerHTML=numberWithCommas(data.freeHeap) +" bytes";
+
+				var statusDiv=document.getElementById("lastCheckInTime");
+				if(data.lastStatus > -1) {
+					statusDiv.innerHTML="Remote checked in "+secondsToDateString(data.lastStatus/1000)+" ago";
+				}
+
+				var statusDiv=document.getElementById("uptimeSecondsBase");
+				statusDiv.innerHTML=secondsToDateString(data.uptimeSecondsBase);
+
+				var statusDiv=document.getElementById("ledModeVal");
+				statusDiv.innerHTML=ledModeArray[data.ledMode];
+
+				var statusDiv=document.getElementById("ledShowVal");
+				statusDiv.innerHTML=ledShowArray[data.ledShow];
+
+				var statusDiv=document.getElementById("lightReading");
+				statusDiv.innerHTML=data.lightReading;
+
+				var statusDiv=document.getElementById("lightThresholdVal");
+				statusDiv.innerHTML=data.lightThreshold;
+
+				var statusDiv=document.getElementById("brightnessVal");
+				statusDiv.innerHTML=data.brightness;
+
+				var statusDiv=document.getElementById("batteryStatus");
+				if(data.batteryStatus == 1 || data.batteryStatus == 7) {
+					statusDiv.innerHTML="<font class=\"error\">"+batteryStatusArray[data.batteryStatus]+"</font>";
+				} else if(data.batteryStatus == 6) {
+					statusDiv.innerHTML="<font class=\"good\">"+batteryStatusArray[data.batteryStatus]+"</font>";
+				} else if(data.batteryStatus == 4) {
+					statusDiv.innerHTML="<font class=\"solar\">"+batteryStatusArray[data.batteryStatus]+"</font>";
+				} else {
+					statusDiv.innerHTML=batteryStatusArray[data.batteryStatus];
+				}
+
+				var statusDiv=document.getElementById("auxInput");
+				statusDiv.innerHTML=data.auxInput;
+
+				var statusDiv=document.getElementById("ambientTemp");
+				statusDiv.innerHTML=tempConvert(data.ambientTemp) + "F";
+
+				var el = document.getElementById("currentColorLink");
+				if(el != null) {
+					el.setAttribute("href", "setcolor.html?currentColor=" + data.colorSingle.toString(16).padStart(6, '0'));
+				}
+
+				var el = document.getElementById("ledShowCheck");
+				if(data.ledShow == 1) {
+					el.checked = true;
+				}
+
+				window.setTimeout(updateInfo, 5000);
+			}
+		}
+		xhr.send();
 	}
-	xhr.send();
-}
 
-function secondsToDateString(sec_num) {
-	var days = Math.floor(sec_num / 86400);
-	sec_num -= days * 86400;
+	function secondsToDateString(sec_num) {
+		var days = Math.floor(sec_num / 86400);
+		sec_num -= days * 86400;
 
-	var hours = Math.floor(sec_num / 3600);
-	sec_num -= hours * 3600;
+		var hours = Math.floor(sec_num / 3600);
+		sec_num -= hours * 3600;
 
-	var minutes = Math.floor(sec_num / 60);
-	sec_num -= minutes * 60;
+		var minutes = Math.floor(sec_num / 60);
+		sec_num -= minutes * 60;
 
-	var seconds = Math.round(sec_num);
+		var seconds = Math.round(sec_num);
 
-	var time = "";
-	if(days > 0)
+		var time = "";
+		if(days > 0)
 		time += days+'d ';
-	if(hours > 0)
+		if(hours > 0)
 		time += hours+'h ';
-	if(minutes > 0)
+		if(minutes > 0)
 		time += minutes+'m ';
-	time += seconds+'s';
+		time += seconds+'s';
 
-  return time;
-}
-
-// from http://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
-function numberWithCommas(x) {
-    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-}
-
-function createModeSelect() {
-	var el = document.getElementById("ledMode");
-	for (var i = 0; i < ledModeArray.length; i++) {
-		var opt = document.createElement('option');
-		opt.value = i;
-		opt.innerHTML = ledModeArray[i];
-		if(i == ledMode) {
-			opt.selected = true;
-		}
-		el.appendChild(opt);
+		return time;
 	}
-}
 
-window.onload=function(e) {
-	updateInfo();
-	createModeSelect();
-};
+	// from http://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
+	function numberWithCommas(x) {
+		return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+	}
 
-function CheckAndSubmit() {
-	var el = document.getElementById("ledShowCheck");
-	if(el != null) {
-		if(el.checked) {
-			var el2 = document.getElementById("ledShow");
-			if(el2 != null) {
-				el2.value = 1;
+	function createModeSelect() {
+		var el = document.getElementById("ledMode");
+		for (var i = 0; i < ledModeArray.length; i++) {
+			var opt = document.createElement('option');
+			opt.value = i;
+			opt.innerHTML = ledModeArray[i];
+			if(i == ledMode) {
+				opt.selected = true;
+			}
+			el.appendChild(opt);
+		}
+	}
+
+	window.onload=function(e) {
+		updateInfo();
+		createModeSelect();
+	};
+
+	function CheckAndSubmit() {
+		var el = document.getElementById("ledShowCheck");
+		if(el != null) {
+			if(el.checked) {
+				var el2 = document.getElementById("ledShow");
+				if(el2 != null) {
+					el2.value = 1;
+				}
 			}
 		}
 	}
-}
-</script>
+	</script>
 </head>
 <body>
-<div id="main">
-iMailbox
-<hr>
-<strong>Base</strong><br>
-<strong>Uptime:</strong> <span id="uptimeSecondsBase">--</span><br>
-<strong>Free heap:</strong> <span id="freeHeap">--</span>&nbsp;&nbsp;&nbsp;<span id="lastCheckInTime">Remote has not checked in</span>
-<hr>
-<strong>Remote</strong><br>
-<strong>Uptime:</strong> <span id="uptimeSeconds">--</span><br>
-<form method="POST" action="set.cgi"><strong>LED Mode:</strong> <span id="ledModeVal">--</span>&nbsp;<select id="ledMode" name="ledMode"></select>&nbsp;<input type="submit" value="Change"></form>
-<form method="POST" action="set.cgi" onsubmit="return CheckAndSubmit();"><input type="hidden" id="ledShow" name="ledShow" value="0">
-<strong>Light Sensor Override:</strong> <span id="ledShowVal">--</span>&nbsp;<input type="checkbox" id="ledShowCheck" name="ledShowCheck">&nbsp;<input type="submit" value="Change">
-</form>
-<form method="POST" action="set.cgi">
-<strong>Brightness:</strong> <span id="brightnessVal">--</span>&nbsp;<input type="text" id="brightness" name="brightness" size="4">&nbsp;<input type="submit" value="Change"><br>
-</form>
-<strong>Light Reading:</strong> <span id="lightReading">--</span><br>
-<form method="POST" action="set.cgi">
-<strong>Light Threshold:</strong> <span id="lightThresholdVal">--</span>&nbsp;<input type="text" id="lightThreshold" name="lightThreshold" size="4">&nbsp;<input type="submit" value="Change"><br>
-</form>
-<strong>Battery Status:</strong> <span id="batteryStatus">--</span><br>
-<strong>Auxiliary Input:</strong> <span id="auxInput">--</span><br>
-<strong>Ambient Temperature:</strong> <span id="ambientTemp">--</span><br>
-<br>
-<a id="currentColorLink" href="setcolor.html">Set LED Color</a>
-</div>
+	<div id="main">
+		iMailbox
+		<hr>
+		<strong>Base</strong><br>
+		<strong>Uptime:</strong> <span id="uptimeSecondsBase">--</span><br>
+		<strong>Free heap:</strong> <span id="freeHeap">--</span>&nbsp;&nbsp;&nbsp;<span id="lastCheckInTime">Remote has not checked in</span>
+		<hr>
+		<strong>Remote</strong><br>
+		<strong>Uptime:</strong> <span id="uptimeSeconds">--</span><br>
+		<form method="POST" action="set.cgi"><strong>LED Mode:</strong> <span id="ledModeVal">--</span>&nbsp;<select id="ledMode" name="ledMode"></select>&nbsp;<input type="submit" value="Change"></form>
+		<form method="POST" action="set.cgi" onsubmit="return CheckAndSubmit();"><input type="hidden" id="ledShow" name="ledShow" value="0">
+			<strong>Light Sensor Override:</strong> <span id="ledShowVal">--</span>&nbsp;<input type="checkbox" id="ledShowCheck" name="ledShowCheck">&nbsp;<input type="submit" value="Change">
+		</form>
+		<form method="POST" action="set.cgi">
+			<strong>Brightness:</strong> <span id="brightnessVal">--</span>&nbsp;<input type="text" id="brightness" name="brightness" size="4">&nbsp;<input type="submit" value="Change"><br>
+		</form>
+		<strong>Light Reading:</strong> <span id="lightReading">--</span><br>
+		<form method="POST" action="set.cgi">
+			<strong>Light Threshold:</strong> <span id="lightThresholdVal">--</span>&nbsp;<input type="text" id="lightThreshold" name="lightThreshold" size="4">&nbsp;<input type="submit" value="Change"><br>
+		</form>
+		<strong>Battery Status:</strong> <span id="batteryStatus">--</span><br>
+		<strong>Auxiliary Input:</strong> <span id="auxInput">--</span><br>
+		<strong>Ambient Temperature:</strong> <span id="ambientTemp">--</span><br>
+		<br>
+		<a id="currentColorLink" href="setcolor.html">Set LED Color</a>
+	</div>
 </form>
 </body></html>
