@@ -17,8 +17,8 @@ NodeMCU connections
 #include <ArduinoJson.h>
 #include "config.h"
 
-#define HC12RXGPIO 12
-#define HC12TXGPIO 14
+#define HC12RXGPIO 14
+#define HC12TXGPIO 12
 #define HC12SETGPIO 4
 
 char HC12ByteIn;
@@ -69,7 +69,7 @@ typedef enum {
 // end struct and enum
 
 // global variables
-SoftwareSerial HC12(HC12RXGPIO, HC12TXGPIO);
+SoftwareSerial HC12(HC12TXGPIO, HC12RXGPIO);
 WiFiClient espClient;
 Ticker uptimeTicker;
 ESP8266WebServer httpServer(80);
@@ -418,10 +418,10 @@ void handleSet() {
 
 // main setup
 void setup() {
-  Serial.begin(9600);
-  delay(100);
-  Serial.println("");
-  Serial.println("Beginning setup");
+	Serial.begin(9600);
+	delay(100);
+	Serial.println("");
+	Serial.println("Beginning setup");
 
 	pinMode(LED_BUILTIN, OUTPUT);
 	digitalWrite(LED_BUILTIN, ledState);
@@ -432,11 +432,13 @@ void setup() {
 	pinMode(HC12SETGPIO, OUTPUT);
 
 	uptimeTicker.setCallback(incrementUptime);
-  uptimeTicker.setInterval(1000);
-  uptimeTicker.start();
+	uptimeTicker.setInterval(1000);
+	uptimeTicker.start();
 
-  HC12ReadBuffer.reserve(64);
-  HC12.begin(9600);
+	HC12ReadBuffer.reserve(64);
+	digitalWrite(HC12SETGPIO, HIGH);               // Enter Transparent mode
+  	delay(80);
+	HC12.begin(9600);
 
 	remoteStatusSet.uptimeSeconds = 0;
 	remoteStatusSet.colorSingle = 0x00ff0000;

@@ -26,8 +26,8 @@ Arduino Pro Mini connections
 #define BATTCHARGEGPIO 3
 #define BATTDONEGPIO 4
 #define BATTPGGPIO 5
-#define HC12RXGPIO 6
-#define HC12TXGPIO 7
+#define HC12TXGPIO 6
+#define HC12RXGPIO 7
 #define AUXINGPIO 8
 #define HC12SETGPIO 9
 #define ONEWIREGPIO 10
@@ -37,7 +37,7 @@ Arduino Pro Mini connections
 
 
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUMBER_OF_PIXELS, PIXELGPIO, NEO_GRB + NEO_KHZ800);
-SoftwareSerial HC12(HC12RXGPIO, HC12TXGPIO);
+SoftwareSerial HC12(HC12TXGPIO, HC12RXGPIO);
 
 OneWire oneWire(ONEWIREGPIO);
 DallasTemperature sensors(&oneWire);
@@ -408,13 +408,13 @@ void setFromStatus() {
 
 // main setup
 void setup() {
-  Serial.begin(9600);
-  delay(100);
+	Serial.begin(9600);
+	delay(100);
 	Serial.println();
 	Serial.println();
-  Serial.println("Begin setup");
+	Serial.println("Begin setup");
 
-  HC12ReadBuffer.reserve(64);
+	HC12ReadBuffer.reserve(64);
 	SerialReadBuffer.reserve(64);
 
 	pinMode(LED_BUILTIN, OUTPUT);
@@ -425,16 +425,16 @@ void setup() {
 	pinMode(BATTPGGPIO, INPUT_PULLUP);
 	pinMode(AUXINGPIO, INPUT_PULLUP);
 	// setup GPIO outputs
-  pinMode(HC12SETGPIO, OUTPUT);
-  pinMode(PIXELGPIO, OUTPUT);
+  	pinMode(HC12SETGPIO, OUTPUT);
+  	pinMode(PIXELGPIO, OUTPUT);
 
 	digitalWrite(LED_BUILTIN, ledState);
 
-  digitalWrite(HC12SETGPIO, HIGH);
-  delay(80);
-  HC12.begin(9600);
+	digitalWrite(HC12SETGPIO, HIGH);
+	delay(80);
+	HC12.begin(9600);
 
-  myStatus.uptimeSeconds = 0;
+	myStatus.uptimeSeconds = 0;
 	myStatus.colorSingle = 0x0000ff00;
 	myStatus.colorFade1 = 0;
 	myStatus.colorFade2 = 0;
@@ -445,21 +445,21 @@ void setup() {
 	myStatus.batteryStatus = 0;
 	myStatus.brightness = 63;
 
-  statusTicker.setCallback(statusCB);
-  statusTicker.setInterval(60000);
-  statusTicker.start();
+	statusTicker.setCallback(statusCB);
+	statusTicker.setInterval(60000);
+	statusTicker.start();
 
-  uptimeTicker.setCallback(incrementUptime);
-  uptimeTicker.setInterval(1000);
-  uptimeTicker.start();
+	uptimeTicker.setCallback(incrementUptime);
+	uptimeTicker.setInterval(1000);
+	uptimeTicker.start();
 
 	rainbowTicker.setCallback(updateRainbow);
-  rainbowTicker.setInterval(200);
+	rainbowTicker.setInterval(200);
 
 	sensors.begin();
 
-  strip.begin();
-  strip.show();
+	strip.begin();
+	strip.show();
 
 	updateBatteryStatus();
 	updateLightReading();
