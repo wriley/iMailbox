@@ -35,7 +35,9 @@ function updateInfo() {
 			statusDiv.innerHTML=numberWithCommas(data.freeHeap) +" bytes";
 
 			var statusDiv=document.getElementById("lastCheckInTime");
-			statusDiv.innerHTML=secondsToDateString(data.lastStatus/1000);
+			if(data.lastStatus > -1) {
+				statusDiv.innerHTML="Remote checked in "+secondsToDateString(data.lastStatus/1000)+" ago";
+			}
 
 			var statusDiv=document.getElementById("uptimeSecondsBase");
 			statusDiv.innerHTML=secondsToDateString(data.uptimeSecondsBase);
@@ -74,7 +76,12 @@ function updateInfo() {
 
 			var el = document.getElementById("currentColorLink");
 			if(el != null) {
-				el.setAttribute("href", "setcolor.html?currentColor=" + data.colorSingle.toString(16));
+				el.setAttribute("href", "setcolor.html?currentColor=" + data.colorSingle.toString(16).padStart(6, '0'));
+			}
+
+			var el = document.getElementById("ledShowCheck");
+			if(data.ledShow == 1) {
+				el.checked = true;
 			}
 
 			window.setTimeout(updateInfo, 5000);
@@ -149,7 +156,7 @@ iMailbox
 <hr>
 <strong>Base</strong><br>
 <strong>Uptime:</strong> <span id="uptimeSecondsBase">--</span><br>
-<strong>Free heap:</strong> <span id="freeHeap">--</span>&nbsp;&nbsp;&nbsp;Remote checked in <span id="lastCheckInTime">--</span> ago
+<strong>Free heap:</strong> <span id="freeHeap">--</span>&nbsp;&nbsp;&nbsp;<span id="lastCheckInTime">Remote has not checked in</span>
 <hr>
 <strong>Remote</strong><br>
 <strong>Uptime:</strong> <span id="uptimeSeconds">--</span><br>

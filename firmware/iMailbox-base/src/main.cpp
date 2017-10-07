@@ -348,7 +348,11 @@ void handleStatus() {
 	root["colorSingle"] = remoteStatus.colorSingle;
 	root["uptimeSecondsBase"] = uptimeSeconds;
 	root["freeHeap"] = ESP.getFreeHeap();
-	root["lastStatus"] = millis() - lastStatus;
+	if(lastStatus > 0) {
+		root["lastStatus"] = millis() - lastStatus;
+	} else {
+		root["lastStatus"] = -1;
+	}
 	root["auxInput"] = remoteStatus.auxInput;
 	root["ambientTemp"] = remoteStatus.ambientTemp;
 	char msg[400];
