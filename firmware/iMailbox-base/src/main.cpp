@@ -107,7 +107,7 @@ void wifiEvent(WiFiEvent_t event) {
 }
 
 void dumpStatus() {
-	Serial.println("STATUS DUMP:");
+	Serial.println("STATUS DUMP (remote):");
 
 	Serial.print("SD* uptimeSeconds: ");
 	Serial.println(remoteStatus.uptimeSeconds);
