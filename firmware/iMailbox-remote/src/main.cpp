@@ -324,7 +324,7 @@ void requestStatus() {
 }
 
 void checkDark() {
-    if(myStatus.lightReading < myStatus.lightThreshold) {
+    if(myStatus.lightReading > myStatus.lightThreshold) {
         darkReadings++;
         if(darkReadings >= 5) {
             isDark = true;
@@ -468,9 +468,9 @@ void setup() {
     updateAmbientTemp();
 
     // we just started up, is it dark out?
-    if(myStatus.lightReading < myStatus.lightThreshold) {
-    isDark = true;
-    darkReadings = 5;
+    if(myStatus.lightReading > myStatus.lightThreshold) {
+        isDark = true;
+        darkReadings = 5;
     }
 
     setFromStatus();
