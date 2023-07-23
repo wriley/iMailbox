@@ -71,7 +71,6 @@ typedef enum {
 // global variables
 SoftwareSerial HC12(HC12TXGPIO, HC12RXGPIO);
 WiFiClient espClient;
-Ticker uptimeTicker;
 ESP8266WebServer httpServer(80);
 ESP8266HTTPUpdateServer httpUpdater;
 iMailboxStatus remoteStatus;
@@ -149,7 +148,7 @@ void dumpStatus() {
 }
 
 void dumpStatusSet() {
-	Serial.println("STATUS DUMP:");
+	Serial.println("STATUS SET DUMP:");
 
 	Serial.print("SD* uptimeSeconds: ");
 	Serial.println(remoteStatusSet.uptimeSeconds);
@@ -336,8 +335,8 @@ void handleNotFound(){
 }
 
 void handleStatus() {
-	StaticJsonBuffer<400> jsonBuffer;
-	JsonObject& root = jsonBuffer.createObject();
+	StaticJsonDocument<400> jsonBuffer;
+	JsonObject root = jsonBuffer.createNestedObject();
 	root["ledMode"] = remoteStatus.ledMode;
 	root["ledShow"] = remoteStatus.ledShow;
 	root["brightness"] = remoteStatus.brightness;
@@ -357,7 +356,7 @@ void handleStatus() {
 	root["ambientTemp"] = remoteStatus.ambientTemp;
 	char msg[400];
 	char *firstChar = msg;
-	root.printTo(firstChar, sizeof(msg) - strlen(msg));
+	serializeJson(root, firstChar, sizeof(msg) - strlen(msg));
 	httpServer.send(200, "text/json", msg);
 }
 
@@ -415,10 +414,14 @@ void handleSet() {
 			}
 		}
 	}
+	// send twice in case remote is asleep
+	sendStatus();
+	delay(1000);
 	sendStatus();
 	send302("/");
 }
 
+Ticker uptimeTicker(incrementUptime, 1000);
 
 // main setup
 void setup() {
@@ -435,8 +438,6 @@ void setup() {
 	// setup GPIO outputs
 	pinMode(HC12SETGPIO, OUTPUT);
 
-	uptimeTicker.setCallback(incrementUptime);
-	uptimeTicker.setInterval(1000);
 	uptimeTicker.start();
 
 	HC12ReadBuffer.reserve(64);

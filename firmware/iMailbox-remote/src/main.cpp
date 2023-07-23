@@ -1,3 +1,4 @@
+
 /*
 
 Arduino Pro Mini connections
@@ -61,12 +62,10 @@ bool isDark = false;
 int8_t darkReadings = 0;
 bool modeNotOff = false;
 bool isDisabled = false;
-bool isFirstStatus = false;
+bool isFirstStatus = true;
 float tempF;
-Ticker statusTicker;
-Ticker uptimeTicker;
-Ticker rainbowTicker;
 bool justWoke = false;
+uint16_t awaitingStatus = 0;
 
 // structs and enums
 // must match between base and remote
@@ -269,7 +268,7 @@ void dumpStatus() {
 }
 
 void dumpStatusSet() {
-    Serial.println("STATUS DUMP:");
+    Serial.println("STATUS SET DUMP:");
 
     Serial.print("SD* uptimeSeconds: ");
     Serial.println(myStatusSet.uptimeSeconds);
@@ -321,6 +320,7 @@ void sendStatus() {
 void requestStatus() {
     Serial.println("Requesting status from base station");
     HC12.println("RS");
+    awaitingStatus = 1;
 }
 
 void checkDark() {
@@ -351,8 +351,7 @@ void statusCB() {
     updateAmbientTemp();
 
     checkDark();
-
-    sendStatus();
+    if(!awaitingStatus) { sendStatus(); }
 }
 
 void toggleLED() {
@@ -387,25 +386,31 @@ void updateRainbow() {
 }
 
 void setFromStatus() {
+    Serial.println("setFromStatus()");
+    dumpStatusSet();
     modeNotOff = true;
     runRainbow = false;
     switch(myStatus.ledMode) {
-    case OFF:
-    modeNotOff = false;
-    strip.clear();
-    strip.show();
-    break;
-    case SINGLECOLOR:
-    setAllPixels(myStatus.colorSingle);
-    strip.show();
-    break;
-    case RGBFADE:
-    runRainbow = true;
-    break;
+        case OFF:
+            modeNotOff = false;
+            strip.clear();
+            strip.show();
+            break;
+        case SINGLECOLOR:
+            setAllPixels(myStatus.colorSingle);
+            strip.show();
+            break;
+        case RGBFADE:
+            runRainbow = true;
+            break;
     }
 
     strip.setBrightness(myStatus.brightness);
 }
+
+Ticker statusTicker(statusCB, 60000);
+Ticker uptimeTicker(incrementUptime, 1000);
+Ticker rainbowTicker(updateRainbow, 200);
 
 // main setup
 void setup() {
@@ -446,17 +451,8 @@ void setup() {
     myStatus.batteryStatus = 0;
     myStatus.brightness = 63;
 
-    statusTicker.setCallback(statusCB);
-    statusTicker.setInterval(60000);
     statusTicker.start();
-
-    uptimeTicker.setCallback(incrementUptime);
-    uptimeTicker.setInterval(1000);
     uptimeTicker.start();
-
-    rainbowTicker.setCallback(updateRainbow);
-    rainbowTicker.setInterval(200);
-
     sensors.begin();
 
     strip.begin();
@@ -467,24 +463,22 @@ void setup() {
     updateAuxInputStatus();
     updateAmbientTemp();
 
+    requestStatus();
+    delay(1000);
+
     // we just started up, is it dark out?
     if(myStatus.lightReading > myStatus.lightThreshold) {
         isDark = true;
         darkReadings = 5;
     }
 
-    setFromStatus();
-    sendStatus();
-
-    //dumpStatus();
-
   Serial.println("Setup done, entering main loop");
 }
 
 // main loop
 void loop() {
-    // it's light out and light sensor is not overridden so let's sleep
-    if(!isDark && myStatus.ledShow == 0) {
+    // it's light out and light sensor is not overridden and we're not waiting on status from base so let's sleep
+    if(!isDark && !myStatus.ledShow && !awaitingStatus) {
         Serial.println("Going to sleep");
         strip.clear();
         strip.show();
@@ -498,17 +492,19 @@ void loop() {
         }
 
         justWoke = true;
-        Serial.println("Woke up, fetching status from base");
+        Serial.println("Woke up");
         updateLightReading();
         checkDark();
+
         requestStatus();
-        // give base time to respond
-        delay(1000);
     }
 
     statusTicker.update();
     uptimeTicker.update();
     rainbowTicker.update();
+
+    // kludge failsafe
+    //if(awaitingStatus > 0) { awaitingStatus++; }
 
     // some serial stuff borrowed from https://www.allaboutcircuits.com/projects/understanding-and-implementing-the-hc-12-wireless-transceiver-module/
 
@@ -574,9 +570,8 @@ void loop() {
                 isFirstStatus = false;
                 sendStatus();
             }
-            dumpStatusSet();
-            Serial.println("My status");
-            dumpStatus();
+            awaitingStatus = 0;
+            sendStatus();
         }
 
         if (HC12ReadBuffer.startsWith("RS")) {
@@ -590,7 +585,7 @@ void loop() {
 
     if(justWoke) {
         justWoke = false;
-        sendStatus();
+        if(!awaitingStatus) { sendStatus(); }
     }
 
     // Control logic
