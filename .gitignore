@@ -1,2 +1,5 @@
 firmware/iMailbox-base/src/config.h
 firmware/iMailbox-base/.pio/
+firmware/iMailbox-base/.vscode/
+firmware/iMailbox-remote/.pio/
+firmware/iMailbox-remote/.vscode/
